@@ -15,10 +15,7 @@
 #include "advertisementslist.h"
 #include "clickscounter.h"
 #include "configuration.h"
-#include "declarativebrowserlauncher.h"
 #include "declarativeconfigurationmanager.h"
-#include "decrativeview.h"
-#include "doors.h"
 #include "helper.h"
 #include "inputactivityfilter.h"
 #include "powermanager.h"
@@ -152,10 +149,9 @@ int main(int argc, char *argv[])
     app.setApplicationName( "IviasClient" );
     // GUI
     qmlRegisterType<AdsModel>( "IviasClient", 1, 0, "AdsModel" );
-    qmlRegisterType<ClicksCounter>( "IviasClient", 1, 0, "ClicksCounter" );
-    qmlRegisterType<DeclarativeBrowserLauncher>( "IviasClient", 1, 0, "BrowserLauncher" );
+//TODO: Move as singleton
+//    qmlRegisterType<ClicksCounter>( "IviasClient", 1, 0, "ClicksCounter" );
     qmlRegisterType<DeclarativeConfigurationManager>( "IviasClient", 1, 0, "ConfigManager" );
-    qmlRegisterType<DoorsWatcher>( "IviasClient", 1, 0, "DoorsWatcher" );
 
     qmlRegisterSingletonType<QMLSettingsSingleton>("IviasClient", 1, 0, "IviasSettings", qml_settings_singleton_provider);
 

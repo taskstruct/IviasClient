@@ -35,7 +35,6 @@ QMAKE_CXXFLAGS += -std=c++11
 SOURCES += main.cpp \
     adsmodel.cpp \
     helper.cpp \
-    doors.cpp \
     configuration.cpp \
     clickscounter.cpp \
     package.cpp \
@@ -43,9 +42,7 @@ SOURCES += main.cpp \
     advertisementslist.cpp \
     sqlupdater.cpp \
     powermanager.cpp \
-    decrativeview.cpp \
     declarativeconfigurationmanager.cpp \
-    declarativebrowserlauncher.cpp \
     pinger.cpp \
     qmlsettingssingleton.cpp \
     inputactivityfilter.cpp
@@ -193,7 +190,6 @@ qtcAddDeployment()
 
 HEADERS += \
     helper.h \
-    doors.h \
     adsmodel.h \
     configuration.h \
     clickscounter.h \
@@ -203,10 +199,9 @@ HEADERS += \
     package.h \
     sqlupdater.h \
     powermanager.h \
-    decrativeview.h \
     declarativeconfigurationmanager.h \
-    declarativebrowserlauncher.h \
     pinger.h \
     constraints.h \
     qmlsettingssingleton.h \
-    inputactivityfilter.h
+    inputactivityfilter.h \
+    clickscounter.h
