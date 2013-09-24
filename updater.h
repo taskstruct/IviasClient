@@ -27,21 +27,18 @@ class Updater : public QObject
 public:
     explicit Updater(QObject *parent = 0);
 
-signals:
-    void timestampsUpdated();
-    void updated();
-
 public slots:
     void update();
     void finishUpdate();
-    void onlineStateChanged ( bool isOnline );
-    void timeout();
     void packageUnpacked(bool);
 //    void quit();
 
 private slots:
     void downloadFinished();
     void headersReceived();
+
+protected:
+    virtual void timerEvent ( QTimerEvent * event );
 
 private:
     void constructAdUrl();
@@ -50,9 +47,6 @@ private:
     void requestLastModfied();
     void requestNext();
 
-    QTimer *m_updateTimer;
-    QNetworkConfigurationManager *m_networkManager;
-
     UpdaterState m_state;
 
     int m_currentAdIndex;
@@ -60,6 +54,7 @@ private:
     uint m_timestamps[ cTotalNumberOfAds ];
 
     Package *m_pkg;
+    int m_timerId;
 };
 
 #endif // UPDATER_H

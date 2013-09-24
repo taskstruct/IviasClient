@@ -4,10 +4,9 @@
 #include <QtCore/QDir>
 #include <QtCore/QList>
 #include <QtCore/QSettings>
-#include <QtCore/QTimer>
+#include <QtCore/QTimerEvent>
 
 #include <QtNetwork/QNetworkAccessManager>
-#include <QtNetwork/QNetworkConfigurationManager>
 #include <QtNetwork/QNetworkReply>
 #include <QtNetwork/QNetworkRequest>
 
@@ -18,71 +17,48 @@
 #include "configuration.h"
 #include "helper.h"
 
+extern QNetworkAccessManager *gNetworkAccessManager;
+
 Updater::Updater(QObject *parent) :
     QObject(parent),
-    m_updateTimer( new QTimer(this) ),
-    m_networkManager( new QNetworkConfigurationManager(this) ),
     m_state( Sleeping ),
-    m_currentAdIndex(-1)
+    m_currentAdIndex(-1),
+    m_timerId(0)
 {
-    m_updateTimer->setInterval( ConfigurationManager::instance()->updateInterval() * 60 * 60 * 1000 ); // 1 hour
-    m_updateTimer->setSingleShot( true );
-
-    connect( m_updateTimer, SIGNAL(timeout()), this, SLOT(timeout()) );
-
-    connect( m_networkManager, SIGNAL(onlineStateChanged(bool)), this, SLOT(onlineStateChanged(bool)) );
-
-    connect( this, SIGNAL(timestampsUpdated()), this, SLOT( checkForChanges()) );
-
-    //    qDebug() << "Updater constructor";
 }
 
 void Updater::update()
 {
-//    requestFile( ConfigurationManager::instance()->ftpPath() + "/" + QLatin1String("timestamps") );
-//    m_state = GettingTimestamps;
+    if( 0 == m_timerId )
+    {
+        // update times has expired
+        m_currentAdIndex = -1;
 
-    m_currentAdIndex = -1;
+        requestNext();
 
-    requestNext();
-
-    qDebug() << "Starting update ...";
+        qDebug() << "Starting update ...";
+    }
 }
 
 void Updater::finishUpdate()
 {
     // restart timer
-    m_updateTimer->start();
-
+    m_timerId = startTimer(/*TODO: Get from config*/);
     m_state = Sleeping;
-
-    qDebug() << "Update finished " << m_updateTimer->interval();
 }
 
-void Updater::onlineStateChanged(bool isOnline)
+void Updater::timerEvent ( QTimerEvent * event )
 {
-    qDebug() << "Updater::onlineStateChanged(bool isOnline)" << isOnline;
-
-    if( true == isOnline  )
+    if( event->timerId() == m_timerId )
     {
-        // TODO: WTF ??? TODO HERE?
-        //        if( ( ( true == m_downloadInterrupted ) && ( GettingPackage == m_state ) ) || ( ( false == m_updateTimer->isActive() ) && ( Sleeping == m_state ) ) )
-        //        {
-        //            // we are online now and we need to update
-        //            update();
-        //        }
-    }
-}
+        killTimer(m_timerId);
+        m_timerId = 0;
 
-void Updater::timeout()
-{
-    if( m_networkManager->isOnline() )
-    {
-        // we are online. We can start update
-        update();
+        if( gNetworkAccessManager->networkAccessible() == QNetworkAccessManager::Accessible )
+        {
+            update();
+        }
     }
-
-    qDebug() << "Updater::timeout()";
 }
 
 void Updater::packageUnpacked(bool ok)
@@ -110,7 +86,7 @@ void Updater::requestFile()
     qDebug() << "Reguesting file " << m_currentAdUrl;
 
     QNetworkRequest request( m_currentAdUrl );
-    QNetworkReply *reply = ConfigurationManager::instance()->networkAccessManager()->get( request );
+    QNetworkReply *reply = gNetworkAccessManager->get( request );
 
     connect( reply, SIGNAL(finished()), this, SLOT(downloadFinished()) );
 
