@@ -14,10 +14,9 @@
 
 #include "advertisementslist.h"
 #include "advertisementtype.h"
+#include "globals.h"
 #include "configuration.h"
 #include "helper.h"
-
-extern QNetworkAccessManager *gNetworkAccessManager;
 
 Updater::Updater(QObject *parent) :
     QObject(parent),
@@ -43,7 +42,7 @@ void Updater::update()
 void Updater::finishUpdate()
 {
     // restart timer
-    m_timerId = startTimer(/*TODO: Get from config*/);
+    m_timerId = startTimer( gQmlSettings->updateInterval() );
     m_state = Sleeping;
 }
 
