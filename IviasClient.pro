@@ -204,4 +204,5 @@ HEADERS += \
     constraints.h \
     qmlsettingssingleton.h \
     inputactivityfilter.h \
-    clickscounter.h
+    clickscounter.h \
+    globals.h
