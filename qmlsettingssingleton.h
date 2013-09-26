@@ -1,8 +1,9 @@
 #ifndef QMLSETTINGSSINGLETON_H
 #define QMLSETTINGSSINGLETON_H
 
-#include <QObject>
-#include <QStringList>
+#include <QtCore/QObject>
+#include <QtCore/QStringList>
+#include <QtCore/QUrl>
 
 class QMLSettingsSingleton : public QObject
 {
@@ -18,15 +19,19 @@ public:
 
     bool showSeatbeltWarningEnabled() const { return m_showSeatbeltWarningEnabled; }
     int seatbeltWarningDuration() const { return m_seatbeltWarningDuration; }
-    QStringList titles() { return {"Page 1", "Page 2", "Page 3", "Page 4", "Page 5", "Page 6"}; }
+    QStringList titles() { return m_titles; }
 
     // not exported ot QML
-    int updateInterval() const { return m_updateInterval; }
+    QUrl url() const { return m_url; }
+    QString username() const { return m_username; }
+    QString password() const { return m_password; }
+    int port() const { return m_port; }
 
-    void init();
+    void fetchProjectId(QSqlDatabase &db);
     bool isInitialized() { return -1 != m_projectId;  }
     void refetchData();
 signals:
+    void projectChanged();
     void showSeatbeltWarningEnabledChanged();
     void seatbeltWarningDurationChanged();
     void titlesChanged();
@@ -35,9 +40,15 @@ signals:
 private:
     int m_projectId;
 
+    QUrl m_url;
+    QString m_username;
+    QString m_password;
+    int m_port;
+
     bool m_showSeatbeltWarningEnabled;
     int m_seatbeltWarningDuration;
     int m_updateInterval;
+    QStringList m_titles;
 };
 
 #endif // QMLSETTINGSSINGLETON_H

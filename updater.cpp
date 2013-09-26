@@ -13,9 +13,7 @@
 #include <QtCore/QDebug>
 
 #include "advertisementslist.h"
-#include "advertisementtype.h"
 #include "globals.h"
-#include "configuration.h"
 #include "helper.h"
 
 Updater::Updater(QObject *parent) :
@@ -154,16 +152,11 @@ void Updater::downloadFinished()
 
 void Updater::constructAdUrl()
 {
-    ConfigurationManager *cfg = ConfigurationManager::instance();
-
+    QUrl url = gQmlSettings->url();
+    m_currentAdUrl.setHost( url.host() );
+    m_currentAdUrl.setPath( url.path() + "/Ad" + QString::number( m_currentAdIndex ) + ".7z");
+    m_currentAdUrl.setPort( gQmlSettings->port() );
     m_currentAdUrl.setScheme( QLatin1String("http") );
-    m_currentAdUrl.setHost( cfg->ftpServerAddress() );
-    m_currentAdUrl.setPath( cfg->ftpPath() + "/Ad" + QString::number( m_currentAdIndex ) + ".7z");
-
-    m_currentAdUrl.setPort( cfg->ftpPort() );
-
-    m_currentAdUrl.setUserName( cfg->ftpUsername() );
-    m_currentAdUrl.setPassword( cfg->ftpPassword() );
 }
 
 void Updater::requestLastModfied()
