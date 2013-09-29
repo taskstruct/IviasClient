@@ -4,7 +4,7 @@ import IviasClient 1.0
 Grid {
     id: mainLayout
 
-    property alias page: model.page
+    property alias page: adsModel.page
 
     anchors.fill: parent
 
@@ -15,7 +15,7 @@ Grid {
     Repeater {
 
         model: AdsModel {
-            id: model
+            id: adsModel
             page: 0
         }
 
@@ -25,8 +25,9 @@ Grid {
             height: 200
 
             title: title
-
             adUrl: startpage
+            page: adsModel.page
+            index: model.index
 
             contentComponent:  Item {
                 Image {

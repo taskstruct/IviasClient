@@ -14,7 +14,7 @@ class AdsModel : public QAbstractListModel, public QQmlParserStatus
     Q_OBJECT
     Q_INTERFACES( QQmlParserStatus )
 
-    Q_PROPERTY( int page READ page WRITE setPage )
+    Q_PROPERTY( int page READ page WRITE setPage NOTIFY pageChanged )
     Q_PROPERTY( int count READ count )
 
 
@@ -40,6 +40,7 @@ public:
     virtual void componentComplete();
 
 signals:
+    void pageChanged();
 
 public slots:
     void packageChanged(int);

@@ -64,10 +64,12 @@ int AdsModel::page() const
 
 void AdsModel::setPage(int page)
 {
-    // TODO: !!!!!! Send signal to update !!!!
-    m_page = page;
+    if( m_page != page ) {
+        m_page = page;
 
-    emit dataChanged( index( 0, 0 ), index( cAdsPerPage - 1, 0 ) );
+        emit pageChanged();
+        emit dataChanged( index( 0, 0 ), index( cAdsPerPage - 1, 0 ) );
+    }
 }
 
 QString AdsModel::getLink(int i)

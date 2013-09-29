@@ -1,5 +1,6 @@
 import QtQuick 2.1
 import QtWebKit 3.0
+import IviasClient 1.0
 
 Item {
     id: container
@@ -8,6 +9,8 @@ Item {
     property alias content: tileContent.source
     property alias contentComponent: tileContent.sourceComponent
     property string adUrl: ""
+    property int page: 0
+    property int index: 0
 
     property bool flipped: false
 
@@ -80,7 +83,7 @@ Item {
                         console.debug("Fron clicked")
                     }
 
-                    ClickCounter.increment();
+                    ClickCounter.increment(container.page, container.index);
                 }
             }
         }
