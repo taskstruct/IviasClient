@@ -19,6 +19,7 @@ class Package : public QObject
         Error
     };
 
+    static const QString titleKey;
     static const QString thumbnailKey;
     static const QString startPageKey;
 
@@ -27,6 +28,7 @@ public:
     explicit Package( const int adIndex, QObject *parent = 0);
     virtual ~Package();
 
+    const QString title() const;
     const QString thumbnail() const;
     const QString startFile() const;
     const QString packagePath() const;
@@ -61,6 +63,7 @@ private:
     int m_adIndex;
     QDateTime m_lastModified;
 
+    QString m_title;
     /// @brief relative path in package for thumbnail picture
     QString m_thumbnail;
     /// @brief relative path in package for file passed to WebView

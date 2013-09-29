@@ -24,7 +24,7 @@ Grid {
             width: mainLayout.width / 3
             height: 200
 
-            title: "Title"
+            title: title
 
             adUrl: startpage
 

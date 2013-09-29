@@ -9,12 +9,7 @@ Item {
     property alias contentComponent: tileContent.sourceComponent
     property string adUrl: ""
 
-    property url backSource: ""
-    property Component backComponent: null
-
     property bool flipped: false
-
-    property var __backContent: null
 
     Flipable {
         id: tile
@@ -84,6 +79,8 @@ Item {
                         container.flipped = true
                         console.debug("Fron clicked")
                     }
+
+                    ClickCounter.increment();
                 }
             }
         }

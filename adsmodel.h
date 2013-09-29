@@ -22,7 +22,7 @@ public:
     AdsModel(QObject *parent = 0);
     ~AdsModel();
 
-    enum Roles { ThumbnailPathRole = Qt::UserRole + 1, FlashPathRole = Qt::UserRole + 2 };
+    enum Roles { TitleRole = Qt::UserRole + 1, ThumbnailPathRole = Qt::UserRole + 2, FlashPathRole = Qt::UserRole + 3 };
 
     int rowCount(const QModelIndex &parent) const;
     QVariant data(const QModelIndex &index, int role) const;

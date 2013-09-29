@@ -7,6 +7,17 @@
 #include "helper.h"
 #include "qmlsettingssingleton.h"
 
+QMLSettingsSingleton* QMLSettingsSingleton::s_instance = 0;
+
+QMLSettingsSingleton* QMLSettingsSingleton::instance(QObject *parent)
+{
+    if( !s_instance ) {
+        s_instance = new QMLSettingsSingleton(parent);
+    }
+
+    return s_instance;
+}
+
 QMLSettingsSingleton::QMLSettingsSingleton(QObject *parent):
     QObject(parent),
     m_projectId(-1),
@@ -26,7 +37,7 @@ QMLSettingsSingleton::QMLSettingsSingleton(QObject *parent):
     m_projectId = settings.value("projectId").toInt();
 
     m_url = QUrl(settings.value("projectUrl").toString());
-    m_port = settings.value("port", 80);
+    m_port = settings.value("port", 80).toInt();
     m_username = settings.value("username").toString();
     m_password = settings.value("password").toString();
 

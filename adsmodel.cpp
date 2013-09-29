@@ -3,7 +3,6 @@
 #include <QtCore/QHash>
 
 #include "advertisementslist.h"
-#include "advertisementtype.h"
 
 AdsModel::AdsModel(QObject *parent) :
     QAbstractListModel(parent),
@@ -32,7 +31,11 @@ QVariant AdsModel::data(const QModelIndex &index, int role) const
 
         if( row < cAdsPerPage )
         {
-            if( ThumbnailPathRole == role )
+            if( TitleRole == role )
+            {
+                retVal = AdvertisementsList::instance()->at( m_page * cAdsPerPage + row ).title();
+            }
+            else if( ThumbnailPathRole == role )
             {
                 retVal = AdvertisementsList::instance()->at( m_page * cAdsPerPage + row ).thumbnail();
             }
@@ -80,6 +83,7 @@ int AdsModel::count() const
 QHash<int,QByteArray> AdsModel::roleNames() const
 {
     QHash< int, QByteArray > roles;
+    roles[ TitleRole ] = "title";
     roles[ ThumbnailPathRole ] = "thumbnail";
     roles[ FlashPathRole ] = "startpage";
 

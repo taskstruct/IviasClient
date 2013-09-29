@@ -6,6 +6,7 @@
 #include <QtQml/QQmlApplicationEngine>
 #include <QtQml/QQmlContext>
 #include <QtQml/QQmlNetworkAccessManagerFactory>
+#include <QtQuick/QQuickWindow>
 #include <QtSql/QSqlDatabase>
 #include <QtSql/QSqlQuery>
 #include <QtWidgets/QApplication>
@@ -13,19 +14,17 @@
 #include "adsmodel.h"
 #include "advertisementslist.h"
 #include "clickscounter.h"
-#include "configuration.h"
-#include "declarativeconfigurationmanager.h"
 #include "globals.h"
 #include "helper.h"
 #include "inputactivityfilter.h"
-#include "powermanager.h"
+//#include "powermanager.h"
 #include "qmlsettingssingleton.h"
 #include "updater.h"
 
 const QLatin1String IviasClientDBConnection("icdbc");
 
 QNetworkAccessManager *gNetworkAccessManager;
-QMLSettingsSingleton *gQmlSettings = 0;
+ClicksCounter *gClicksCounter = 0;
 int gIviasClientID = 0;
 
 class IviasQmlNetworkAccessManagerFactory: public QQmlNetworkAccessManagerFactory {
@@ -44,9 +43,19 @@ static QObject *qml_settings_singleton_provider(QQmlEngine *engine, QJSEngine *s
     Q_UNUSED(engine)
     Q_UNUSED(scriptEngine)
 
-    Q_ASSERT(gQmlSettings);
+    return QMLSettingsSingleton::instance();
+}
 
-    return gQmlSettings;
+static QObject *clicks_counter_singleton_provider(QQmlEngine *engine, QJSEngine *scriptEngine)
+{
+    Q_UNUSED(engine)
+    Q_UNUSED(scriptEngine)
+
+    if( !gClicksCounter ) {
+        gClicksCounter = new ClicksCounter();
+    }
+
+    return gClicksCounter;
 }
 
 void showInitMessage(QObject *window, const QString msg)
@@ -106,13 +115,13 @@ void showInitMessage(QObject *window, const QString msg)
 
 void onAuthenticationRequired(QNetworkReply *reply, QAuthenticator * authenticator)
 {
-    if( gQmlSettings->url().isParentOf(reply->request().url()) ) {
-        authenticator->setUser(gQmlSettings->username());
-        authenticator->setPassword(gQmlSettings->password());
+    if( QMLSettingsSingleton::instance()->url().isParentOf(reply->request().url()) ) {
+        authenticator->setUser(QMLSettingsSingleton::instance()->username());
+        authenticator->setPassword(QMLSettingsSingleton::instance()->password());
     }
     else {
         qDebug() << "Trying to authenticate with wrong url: " << reply->request().url() <<
-                    "\nProject url is: " << gQmlSettings->url();
+                    "\nProject url is: " << QMLSettingsSingleton::instance()->url();
     }
 }
 
@@ -126,7 +135,7 @@ void onNetworkAccessibleChanged ( QNetworkAccessManager::NetworkAccessibility ac
 
         if( !db.isOpen() ) {
             if(db.open()) {
-                gQmlSettings->refetchData();
+                QMLSettingsSingleton::instance()->refetchData();
             }
         }
 
@@ -141,12 +150,10 @@ int main(int argc, char *argv[])
     app.setOrganizationDomain( "ivias.org" );
     app.setApplicationName( "IviasClient" );
     // GUI
-    qmlRegisterType<AdsModel>( "IviasClient", 1, 0, "AdsModel" );
-//TODO: Move as singleton
-//    qmlRegisterType<ClicksCounter>( "IviasClient", 1, 0, "ClicksCounter" );
-    qmlRegisterType<DeclarativeConfigurationManager>( "IviasClient", 1, 0, "ConfigManager" );
+    qmlRegisterType<AdsModel>( "IviasClient", 1, 0, "AdsModel" );;
 
     qmlRegisterSingletonType<QMLSettingsSingleton>("IviasClient", 1, 0, "IviasSettings", qml_settings_singleton_provider);
+    qmlRegisterSingletonType<QMLSettingsSingleton>("IviasClient", 1, 0, "ClickCounter", clicks_counter_singleton_provider);
 
     // init network manager
     gNetworkAccessManager = new QNetworkAccessManager(&app);
@@ -188,10 +195,10 @@ int main(int argc, char *argv[])
     db.setUserName(systemSettings.value("dbUserName").toString());
     db.setPassword(systemSettings.value("dbPassword").toString());
     db.setDatabaseName(systemSettings.value("dbDatabaseName").toString());
+    db.setConnectOptions("MYSQL_OPT_RECONNECT=1;CLIENT_SSL=1");
 
     // load settings from settings.ini
     showInitMessage(window, QLatin1Literal("Loading settings..."));
-    gQmlSettings = new QMLSettingsSingleton(&app);
 
     if( gNetworkAccessManager->networkAccessible() == QNetworkAccessManager::Accessible )
     {
@@ -202,7 +209,7 @@ int main(int argc, char *argv[])
         }
         else
         {
-            gQmlSettings->refetchData();
+            QMLSettingsSingleton::instance()->refetchData();
         }
     }
 

@@ -11,6 +11,7 @@
 #include "constraints.h"
 #include "helper.h"
 
+const QString Package::titleKey = QLatin1Literal("title");
 const QString Package::thumbnailKey = QLatin1Literal("thumbnail");
 const QString Package::startPageKey = QLatin1Literal("startpage");
 
@@ -29,6 +30,11 @@ Package::Package( const int adIndex, QObject *parent) :
 Package::~Package()
 {
     //TODO: Remove everyting that might be working
+}
+
+const QString Package::title() const
+{
+    return m_title;
 }
 
 const QString Package::thumbnail() const
@@ -137,9 +143,10 @@ void Package::remove()
 
     qDebug() << "Removing Ad folder " << m_packagePath << " ... " << res;
 
-    m_thumbnail = "";
-    m_startFile = "";
-    m_packagePath = "";
+    m_title.clear();
+    m_thumbnail.clear();
+    m_startFile.clear();
+    m_packagePath.clear();
     m_isValid = false;
 }
 
@@ -179,6 +186,7 @@ bool Package::parseMetadata( const QString & fileName )
 
     QSettings metadata( fileName, QSettings::IniFormat );
 
+    m_title = metadata.value( titleKey, "Title" ).toString();
     m_thumbnail = metadata.value( thumbnailKey, "" ).toString();
     m_startFile = metadata.value( startPageKey, "" ).toString();
 

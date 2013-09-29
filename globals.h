@@ -9,7 +9,6 @@
 extern const QLatin1String IviasClientDBConnection;
 
 extern QNetworkAccessManager *gNetworkAccessManager;
-extern QMLSettingsSingleton *gQmlSettings;
 
 extern int gIviasClientID;
 

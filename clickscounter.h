@@ -12,7 +12,7 @@ class ClicksCounter : public QObject
 public:
     explicit ClicksCounter(QObject *parent = 0);
 
-    Q_INVOKABLE void update( int page, int index );
+    Q_INVOKABLE void increment( int page, int index );
 
     void flushQueue();
     

@@ -5,6 +5,8 @@
 #include <QtCore/QStringList>
 #include <QtCore/QUrl>
 
+#include <QtSql/QSqlDatabase>
+
 class QMLSettingsSingleton : public QObject
 {
     Q_OBJECT
@@ -15,7 +17,7 @@ class QMLSettingsSingleton : public QObject
     Q_PROPERTY(QStringList titles READ titles NOTIFY titlesChanged)
 
 public:
-    explicit QMLSettingsSingleton(QObject *parent = 0);
+    static QMLSettingsSingleton* instance(QObject *parent = 0);
 
     bool showSeatbeltWarningEnabled() const { return m_showSeatbeltWarningEnabled; }
     int seatbeltWarningDuration() const { return m_seatbeltWarningDuration; }
@@ -26,6 +28,7 @@ public:
     QString username() const { return m_username; }
     QString password() const { return m_password; }
     int port() const { return m_port; }
+    int updateInterval() const { return m_updateInterval; }
 
     void fetchProjectId(QSqlDatabase &db);
     bool isInitialized() { return -1 != m_projectId;  }
@@ -38,6 +41,10 @@ signals:
     void updateIntervalChanged();
 
 private:
+    explicit QMLSettingsSingleton(QObject *parent = 0);
+
+    static QMLSettingsSingleton* s_instance;
+
     int m_projectId;
 
     QUrl m_url;

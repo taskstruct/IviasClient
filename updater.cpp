@@ -15,6 +15,7 @@
 #include "advertisementslist.h"
 #include "globals.h"
 #include "helper.h"
+#include "qmlsettingssingleton.h"
 
 Updater::Updater(QObject *parent) :
     QObject(parent),
@@ -40,7 +41,7 @@ void Updater::update()
 void Updater::finishUpdate()
 {
     // restart timer
-    m_timerId = startTimer( gQmlSettings->updateInterval() );
+    m_timerId = startTimer( QMLSettingsSingleton::instance()->updateInterval() );
     m_state = Sleeping;
 }
 
@@ -152,10 +153,10 @@ void Updater::downloadFinished()
 
 void Updater::constructAdUrl()
 {
-    QUrl url = gQmlSettings->url();
+    QUrl url = QMLSettingsSingleton::instance()->url();
     m_currentAdUrl.setHost( url.host() );
     m_currentAdUrl.setPath( url.path() + "/Ad" + QString::number( m_currentAdIndex ) + ".7z");
-    m_currentAdUrl.setPort( gQmlSettings->port() );
+    m_currentAdUrl.setPort( QMLSettingsSingleton::instance()->port() );
     m_currentAdUrl.setScheme( QLatin1String("http") );
 }
 
@@ -163,7 +164,7 @@ void Updater::requestLastModfied()
 {
     QNetworkRequest request( m_currentAdUrl );
 
-    QNetworkReply * reply = ConfigurationManager::instance()->networkAccessManager()->head( request );
+    QNetworkReply * reply = gNetworkAccessManager->head( request );
     connect( reply, SIGNAL(finished()), this, SLOT(headersReceived()) );
     m_state = GettingHeaders;
 }
@@ -172,7 +173,7 @@ void Updater::headersReceived()
 {
     QNetworkReply * reply = qobject_cast<QNetworkReply *>( sender() );
 
-    Q_ASSERT( 0 == reply );
+    Q_ASSERT( 0 != reply );
 
     qDebug() << " Headers received " << reply->url() << "\nStatus: " << reply->error();
 

@@ -5,14 +5,15 @@
 #include <QtSql/QSqlQuery>
 
 extern QNetworkAccessManager *gNetworkAccessManager;
+extern const QLatin1String IviasClientDBConnection;
 
 ClicksCounter::ClicksCounter(QObject *parent) :
     QObject(parent)
 {
-    qMemSet( m_clicksQueue, 0, sizeof(m_clicksQueue) );
+    std::memset( m_clicksQueue, 0, sizeof(m_clicksQueue) );
 }
 
-void ClicksCounter::update( int page, int index )
+void ClicksCounter::increment( int page, int index )
 {
     QSqlDatabase db = QSqlDatabase::database( IviasClientDBConnection );
     const int id = page * cAdsPerPage + index;
@@ -20,7 +21,7 @@ void ClicksCounter::update( int page, int index )
     if( gNetworkAccessManager->networkAccessible() == QNetworkAccessManager::Accessible && db.isOpen() )
     {
         // update DB
-        const QString1Literal command("UPDATE stats SET clicks = clicks+1 WHERE cid = %1 AND adId = %2");
+        const QLatin1Literal command("UPDATE stats SET clicks = clicks+1 WHERE cid = %1 AND adId = %2");
         QSqlQuery query( QString(command).arg(/*TODO: client id*/).arg(id), db );
 
         if(!query.exec()) {
@@ -41,12 +42,12 @@ void ClicksCounter::flushQueue()
 
     if( gNetworkAccessManager->networkAccessible() == QNetworkAccessManager::Accessible && db.isOpen() )
     {
-        const QString1Literal command("UPDATE stats SET clicks = clicks+%1 WHERE cid = %2 AND adId = %3");
+        const QLatin1Literal command("UPDATE stats SET clicks = clicks+%1 WHERE cid = %2 AND adId = %3");
 
         for( int i = 0; i < cTotalNumberOfAds; i++ )
         {
             if( m_clicksQueue[i] != 0 ) {
-                QSqlQuery query( QString(command).arg(m_clicksQueue[i]).arg(/*TODO: client id*/).arg(id), db );
+                QSqlQuery query( QString(command).arg(m_clicksQueue[i]).arg(/*TODO: client id*/).arg(i), db );
 
                 if( query.exec() ) {
                     m_clicksQueue[i] = 0;
