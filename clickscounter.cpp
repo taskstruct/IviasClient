@@ -1,6 +1,8 @@
 #include "clickscounter.h"
 #include "globals.h"
+#include "helper.h"
 
+#include <QtCore/QSettings>
 #include <QtNetwork/QNetworkAccessManager>
 #include <QtSql/QSqlDatabase>
 #include <QtSql/QSqlQuery>
@@ -13,7 +15,20 @@ extern const QLatin1String IviasClientDBConnection;
 ClicksCounter::ClicksCounter(QObject *parent) :
     QObject(parent)
 {
-    memset( m_clicksQueue, 0, sizeof(m_clicksQueue) );
+    m_clicksQueue.reserve(cTotalNumberOfAds);
+
+    QSettings settings(Helper::getSettingsPath(), QSettings::IniFormat, this);
+
+    m_clicksQueue = settings.value("clicksQueue", QList::fromStdList( std::list<int>(cTotalNumberOfAds), 0 ) ).toList<int>();
+
+    Q_ASSERT( m_clicksQueue.size() == cTotalNumberOfAds );
+}
+
+ClicksCounter::~ClicksCounter()
+{
+    qDebug() << "Saving clicks queue";
+    QSettings settings(Helper::getSettingsPath(), QSettings::IniFormat, this);
+    settings.setValue("clicksQueue", m_clicksQueue);
 }
 
 void ClicksCounter::increment( int page, int index )
@@ -26,7 +41,7 @@ void ClicksCounter::increment( int page, int index )
     if( gNetworkAccessManager->networkAccessible() == QNetworkAccessManager::Accessible && db.isOpen() )
     {
         // update DB
-        const QLatin1Literal command("UPDATE stats SET clicks = clicks+1 WHERE cid = %1 AND adId = %2");
+        const QLatin1Literal command("UPDATE Stats SET clicks = clicks+1 WHERE icId = %1 AND adIndex = %2");
         QSqlQuery query( QString(command).arg(gIviasClientID).arg(id), db );
 
         if(!query.exec()) {
@@ -49,6 +64,7 @@ void ClicksCounter::flushQueue()
     {
         const QLatin1Literal command("UPDATE stats SET clicks = clicks+%1 WHERE cid = %2 AND adId = %3");
 
+        Q_ASSERT( m_clicksQueue.size() == cTotalNumberOfAds );
         for( int i = 0; i < cTotalNumberOfAds; i++ )
         {
             if( m_clicksQueue[i] != 0 ) {

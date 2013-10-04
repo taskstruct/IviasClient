@@ -11,6 +11,7 @@ class ClicksCounter : public QObject
     Q_OBJECT
 public:
     explicit ClicksCounter(QObject *parent = 0);
+    ~ClicksCounter();
 
     Q_INVOKABLE void increment( int page, int index );
 
@@ -19,7 +20,7 @@ public:
     //TODO: Save queue on exit, if there are unupdated values
 
 private:
-    int m_clicksQueue[cTotalNumberOfAds];
+    QList<int> m_clicksQueue;
 };
 
 #endif // CLICKSCOUNTER_H

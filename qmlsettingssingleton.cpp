@@ -50,7 +50,7 @@ QMLSettingsSingleton::QMLSettingsSingleton(QObject *parent):
 
 void QMLSettingsSingleton::fetchProjectId(QSqlDatabase &db)
 {
-    QSqlQuery query("SELECT projectId FROM IviasClients WHERE icID = :id", db);
+    QSqlQuery query("SELECT projectId FROM IviasClients WHERE icId = :id", db);
     query.bindValue(":id", gIviasClientID);
 
     if( !query.exec() ) {
@@ -106,7 +106,7 @@ void QMLSettingsSingleton::refetchData()
     QSettings settings( Helper::getSettingsPath(), QSettings::IniFormat, this );
 
     // HTTP settings
-    QString urlString = query.value("url").toString();
+    QString urlString = query.value("projectUrl").toString();
     QUrl url(urlString);
     if( url != m_url ) {
         m_url = url;
