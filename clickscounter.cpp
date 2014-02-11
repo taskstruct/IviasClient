@@ -15,20 +15,45 @@ extern const QLatin1String IviasClientDBConnection;
 ClicksCounter::ClicksCounter(QObject *parent) :
     QObject(parent)
 {
-    m_clicksQueue.reserve(cTotalNumberOfAds);
-
     QSettings settings(Helper::getSettingsPath(), QSettings::IniFormat, this);
 
-    m_clicksQueue = settings.value("clicksQueue", QList::fromStdList( std::list<int>(cTotalNumberOfAds), 0 ) ).toList<int>();
 
-    Q_ASSERT( m_clicksQueue.size() == cTotalNumberOfAds );
+    int arraySize = settings.beginReadArray("clicksQueue");
+
+    for( int i = 0; i < arraySize; ++i )
+    {
+        settings.setArrayIndex(i);
+        m_clicksQueue[i] = settings.value("adNum").toInt();
+    }
+
+    settings.endArray();
+
+    // array is smaller than expected, fill others with zeroes
+    for( int i = arraySize; i < cTotalNumberOfAds; ++i )
+    {
+        m_clicksQueue[i] = 0;
+    }
+
+    for( int i = 0; i < cTotalNumberOfAds; ++i )
+    {
+        qDebug() << "No." << i << ": " << m_clicksQueue[i];
+    }
 }
 
 ClicksCounter::~ClicksCounter()
 {
     qDebug() << "Saving clicks queue";
+
     QSettings settings(Helper::getSettingsPath(), QSettings::IniFormat, this);
-    settings.setValue("clicksQueue", m_clicksQueue);
+    settings.beginWriteArray("clicksQueue");
+
+    for( int i = 0; i < cTotalNumberOfAds; ++i )
+    {
+        settings.setArrayIndex(i);
+        settings.setValue("adNum", m_clicksQueue[i]);
+    }
+
+    settings.endArray();
 }
 
 void ClicksCounter::increment( int page, int index )
@@ -64,7 +89,6 @@ void ClicksCounter::flushQueue()
     {
         const QLatin1Literal command("UPDATE stats SET clicks = clicks+%1 WHERE cid = %2 AND adId = %3");
 
-        Q_ASSERT( m_clicksQueue.size() == cTotalNumberOfAds );
         for( int i = 0; i < cTotalNumberOfAds; i++ )
         {
             if( m_clicksQueue[i] != 0 ) {

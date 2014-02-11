@@ -20,7 +20,7 @@ public:
     //TODO: Save queue on exit, if there are unupdated values
 
 private:
-    QList<int> m_clicksQueue;
+    int m_clicksQueue[cTotalNumberOfAds];
 };
 
 #endif // CLICKSCOUNTER_H
