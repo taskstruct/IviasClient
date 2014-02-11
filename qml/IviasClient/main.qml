@@ -68,7 +68,7 @@ Window {
             anchors.centerIn: parent
 
             Image {
-                source: "images/emblem-important.png"
+                source: "images/warning.png"
             }
 
             Text {
@@ -77,6 +77,16 @@ Window {
                 font.pointSize: 36
 
                 Layout.fillWidth: true
+            }
+        }
+
+        Timer {
+            interval: IviasSettings.seatbeltWarningDuration
+
+            running: seatbeltWarning.active
+
+            onTriggered: {
+                seatbeltWarning.active = false;
             }
         }
     }
