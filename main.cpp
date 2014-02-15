@@ -65,54 +65,6 @@ void showInitMessage(QObject *window, const QString msg)
     window->setProperty("initText", value);
 }
 
-//bool LoadSettingsFromDB( QSqlDatabase db )
-//{
-//    QSqlQuery query1("SELECT projectId FROM IviasClients WHERE icID = :id", db);
-//    query1.bindValue(":id", gIviasClientID);
-
-//    if( !query1.exec() ) {
-//        return false;
-//    }
-
-//    if(!query1.next()) {
-//        return false;
-//    }
-
-//    int projectId = query1.value(0).toInt();
-
-//    //TODO: only selected elements
-//    QSqlQuery query2("SELECT * FROM Projects WHERE projectId = :pid", db);
-//    query2.bindValue(":pid", projectId);
-
-//    if(!query2.exec()) {
-//        return false;
-//    }
-
-//    if(!query2.next()) {
-//        return false;
-//    }
-
-//    HttpSettings tmp;
-//    tmp.url = QUrl(query2.value("url").toString());
-////    tmp.port = query2.value("port");
-//    tmp.username = query2.value("username").toString();
-//    tmp.password = query2.value("password").toString();
-
-//    if(tmp.url != gHttpSettings.url) {
-//        // project has been changed. Remove all data
-//        AdvertisementsList::instance()->clearList();
-
-//        gHttpSettings = tmp;
-
-//        //TODO: Start updater to download data
-//    }
-//    else {
-//        gHttpSettings = tmp;
-//    }
-
-//    return true;
-//}
-
 void onAuthenticationRequired(QNetworkReply *reply, QAuthenticator * authenticator)
 {
     if( QMLSettingsSingleton::instance()->url().isParentOf(reply->request().url()) ) {
@@ -204,16 +156,14 @@ int main(int argc, char *argv[])
     {
         if(!db.open())
         {
-            qDebug() << "Unable to open DB, but network is accessible.";
-            return -2; //TODO: Show this as error message in app, because if app exits, plain  X server will be shown
+            showInitMessage( window, "ERROR: Unable to open DB, but network is accessible.");
+//            return -2; //TODO: Show this as error message in app, because if app exits, plain  X server will be shown
         }
         else
         {
             QMLSettingsSingleton::instance()->refetchData();
         }
     }
-
-//    DeclarativeView viewer;
 
 //    PowerManager pwMgr( &app );
 //    pwMgr.start();
@@ -223,8 +173,6 @@ int main(int argc, char *argv[])
     // create updater
     Updater updater( &app );
     updater.update();
-
-//    viewer.show();
 
     // Now we can start listen for events from network manager
     QObject::connect( gNetworkAccessManager, &QNetworkAccessManager::authenticationRequired, &onAuthenticationRequired );

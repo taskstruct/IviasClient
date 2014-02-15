@@ -29,15 +29,6 @@ Grid {
             page: adsModel.page
             index: model.index
 
-            //TODO: Move this as static part of Tile
-            contentComponent:  Item {
-                Image {
-                    source: thumbnail
-                    anchors.fill: parent
-                    fillMode: Image.PreserveAspectFit
-                }
-            }
-
             onFlippedChanged: {
                 console.debug("delegate flipped")
             }

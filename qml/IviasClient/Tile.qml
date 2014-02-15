@@ -6,8 +6,6 @@ Item {
     id: container
 
     property alias title: titleText.text
-    property alias content: tileContent.source
-    property alias contentComponent: tileContent.sourceComponent
     property string adUrl: ""
     property int page: 0
     property int index: 0
@@ -34,9 +32,10 @@ Item {
                 anchors.fill: parent
             }
 
-            // todo: put loader in the end to be over mouse area?
-            Loader {
+            Item {
                 id: tileContent
+
+                clip: true
 
                 anchors.top: frontView.top
                 anchors.left: frontView.left
@@ -44,8 +43,13 @@ Item {
                 anchors.right: frontView.right
                 anchors.margins: 5
 
-                clip: true
+                Image {
+                    source: thumbnail
+                    anchors.fill: parent
+                    fillMode: Image.PreserveAspectFit
+                }
             }
+
 
             Rectangle {
                 id: titleBackground
