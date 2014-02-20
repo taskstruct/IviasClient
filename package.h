@@ -19,9 +19,10 @@ class Package : public QObject
         Error
     };
 
-    static const QString titleKey;
-    static const QString thumbnailKey;
-    static const QString startPageKey;
+    static const QString TitleKey;
+    static const QString ThumbnailKey;
+    static const QString MainFileKey;
+    static const QString TypeKey;
 
 public:
     explicit Package( QObject *parent = 0);
@@ -30,7 +31,8 @@ public:
 
     const QString title() const;
     const QString thumbnail() const;
-    const QString startFile() const;
+    const QString mainFile() const;
+    const QString type() const;
     const QString packagePath() const;
     QDateTime lastModified() const;
 
@@ -67,7 +69,8 @@ private:
     /// @brief relative path in package for thumbnail picture
     QString m_thumbnail;
     /// @brief relative path in package for file passed to WebView
-    QString m_startFile;
+    QString m_mainFile;
+    QString m_type;
     /// @brief absolute path to package e.g /home/user/.IviasClient/Ad1
     QString m_packagePath;
     QString m_tmpPackagePath;

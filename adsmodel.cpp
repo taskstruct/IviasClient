@@ -31,17 +31,21 @@ QVariant AdsModel::data(const QModelIndex &index, int role) const
 
         if( row < cAdsPerPage )
         {
-            if( TitleRole == role )
-            {
+            switch (role) {
+            case TitleRole:
                 retVal = AdvertisementsList::instance()->at( m_page * cAdsPerPage + row ).title();
-            }
-            else if( ThumbnailPathRole == role )
-            {
+                break;
+            case ThumbnailPathRole:
                 retVal = AdvertisementsList::instance()->at( m_page * cAdsPerPage + row ).thumbnail();
-            }
-            else if( FlashPathRole == role )
-            {
-                retVal = AdvertisementsList::instance()->at( m_page * cAdsPerPage + row ).startFile();
+                break;
+            case SourceUrlRole:
+                retVal = AdvertisementsList::instance()->at( m_page * cAdsPerPage + row ).mainFile();
+                break;
+            case TypeRole:
+                retVal = AdvertisementsList::instance()->at( m_page * cAdsPerPage + row ).type();
+                break;
+            default:
+                break;
             }
         }
         else
@@ -74,7 +78,7 @@ void AdsModel::setPage(int page)
 
 QString AdsModel::getLink(int i)
 {
-    return AdvertisementsList::instance()->at( i ).startFile();
+    return AdvertisementsList::instance()->at( i ).mainFile();
 }
 
 int AdsModel::count() const
@@ -87,7 +91,8 @@ QHash<int,QByteArray> AdsModel::roleNames() const
     QHash< int, QByteArray > roles;
     roles[ TitleRole ] = "title";
     roles[ ThumbnailPathRole ] = "thumbnail";
-    roles[ FlashPathRole ] = "startpage";
+    roles[ SourceUrlRole ] = "startpage";
+    roles[ TypeRole ] = "type";
 
     return roles;
 }
