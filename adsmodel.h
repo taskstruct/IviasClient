@@ -6,6 +6,8 @@
 #include <QtQml/qqml.h>
 #include <QtQml/QQmlParserStatus>
 
+#include "helper.h"
+
 class QDeclarativeContext;
 class QModelIndex;
 
@@ -16,13 +18,13 @@ class AdsModel : public QAbstractListModel, public QQmlParserStatus
 
     Q_PROPERTY( int page READ page WRITE setPage NOTIFY pageChanged )
     Q_PROPERTY( int count READ count )
-
+    Q_PROPERTY( QString directory READ directory )
 
 public:
     AdsModel(QObject *parent = 0);
     ~AdsModel();
 
-    enum Roles { TitleRole = Qt::UserRole + 1, ThumbnailPathRole = Qt::UserRole + 2, SourceUrlRole = Qt::UserRole + 3, TypeRole = Qt::UserRole + 4 };
+    enum Roles { TitleRole = Qt::UserRole + 1, ThumbnailPathRole = Qt::UserRole + 2 };
 
     int rowCount(const QModelIndex &parent) const;
     QVariant data(const QModelIndex &index, int role) const;
@@ -30,7 +32,7 @@ public:
     int page() const;
     void setPage( int page );
 
-    Q_INVOKABLE QString getLink( int i );
+    QString directory() const { return Helper::dataDir(); }
 
     int count() const;
 

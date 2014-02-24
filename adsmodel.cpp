@@ -38,12 +38,6 @@ QVariant AdsModel::data(const QModelIndex &index, int role) const
             case ThumbnailPathRole:
                 retVal = AdvertisementsList::instance()->at( m_page * cAdsPerPage + row ).thumbnail();
                 break;
-            case SourceUrlRole:
-                retVal = AdvertisementsList::instance()->at( m_page * cAdsPerPage + row ).mainFile();
-                break;
-            case TypeRole:
-                retVal = AdvertisementsList::instance()->at( m_page * cAdsPerPage + row ).type();
-                break;
             default:
                 break;
             }
@@ -76,11 +70,6 @@ void AdsModel::setPage(int page)
     }
 }
 
-QString AdsModel::getLink(int i)
-{
-    return AdvertisementsList::instance()->at( i ).mainFile();
-}
-
 int AdsModel::count() const
 {
     return cAdsPerPage;
@@ -91,8 +80,6 @@ QHash<int,QByteArray> AdsModel::roleNames() const
     QHash< int, QByteArray > roles;
     roles[ TitleRole ] = "title";
     roles[ ThumbnailPathRole ] = "thumbnail";
-    roles[ SourceUrlRole ] = "startpage";
-    roles[ TypeRole ] = "type";
 
     return roles;
 }
@@ -103,11 +90,6 @@ void AdsModel::classBegin()
 
 void AdsModel::componentComplete()
 {
-//    if (!d->folder.isValid() || d->folder.toLocalFile().isEmpty() || !QDir().exists(d->folder.toLocalFile()))
-//        setFolder(QUrl(QLatin1String("file://")+QDir::currentPath()));
-
-//    if (!d->folderIndex.isValid())
-//        QMetaObject::invokeMethod(this, "refresh", Qt::QueuedConnection);
 }
 
 void AdsModel::packageChanged(int i )

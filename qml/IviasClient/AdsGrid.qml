@@ -24,10 +24,7 @@ Grid {
             width: mainLayout.width / 3
             height: 200
 
-            title: title
-            adUrl: startpage
             page: adsModel.page
-            index: model.index
 
             onFlippedChanged: {
                 console.debug("delegate flipped")

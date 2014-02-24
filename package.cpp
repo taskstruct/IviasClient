@@ -13,8 +13,6 @@
 
 const QString Package::TitleKey = QLatin1Literal("title");
 const QString Package::ThumbnailKey = QLatin1Literal("thumbnail");
-const QString Package::MainFileKey = QLatin1Literal("startpage");
-const QString Package::TypeKey = QLatin1Literal("type");
 
 Package::Package( const int adIndex, QObject *parent) :
     QObject(parent),
@@ -41,16 +39,6 @@ const QString Package::title() const
 const QString Package::thumbnail() const
 {
     return m_packagePath + m_thumbnail;
-}
-
-const QString Package::mainFile() const
-{
-    return m_packagePath + m_mainFile;
-}
-
-const QString Package::type() const
-{
-    return m_type;
 }
 
 const QString Package::packagePath() const
@@ -151,8 +139,6 @@ void Package::remove()
 
     m_title.clear();
     m_thumbnail.clear();
-    m_mainFile.clear();
-    m_type.clear();
     m_packagePath.clear();
     m_isValid = false;
 }
@@ -195,10 +181,8 @@ bool Package::parseMetadata( const QString & fileName )
 
     m_title = metadata.value( TitleKey, "Title" ).toString();
     m_thumbnail = metadata.value( ThumbnailKey, "" ).toString();
-    m_mainFile = metadata.value( MainFileKey, "" ).toString();
-    m_type = metadata.value( TypeKey, "" ).toString();
 
-    bool ok = ( !m_thumbnail.isEmpty() && !m_mainFile.isEmpty() && !m_type.isEmpty() );
+    bool ok = ( !m_thumbnail.isEmpty() && QFile::exists( m_tmpPackagePath + "/main.qml" ) );
 
     if(!ok) m_state = Error;
 

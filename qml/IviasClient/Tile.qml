@@ -1,15 +1,10 @@
 import QtQuick 2.1
-import QtWebKit 3.0
 import IviasClient 1.0
 
 Item {
     id: container
 
-    property alias title: titleText.text
-    property string adUrl: ""
     property int page: 0
-    property int index: 0
-
     property bool flipped: false
 
     Flipable {
@@ -66,6 +61,9 @@ Item {
             Text {
                 id: titleText
 
+                //TODO
+                text: title
+
                 font.family: "Ubuntu"
                 font.pointSize: 20
 
@@ -83,11 +81,10 @@ Item {
                 onClicked: {
                     if( !container.flipped )
                     {
-                        container.flipped = true
+                        contentLoder.source = adsModel.directory + "Ad" + index * adsModel.page * 6 + "/main.qml"
                         console.debug("Fron clicked")
+                        ClickCounter.increment(container.page, index);
                     }
-
-                    ClickCounter.increment(container.page, container.index);
                 }
             }
         }
@@ -96,46 +93,91 @@ Item {
             id: backItem
 
             anchors.fill: parent
-            anchors.margins: 10
 
-            WebView {
-                id: webView
-                anchors.fill: parent
-            }
+            Item {
+                id: bar
+                height: 50
 
-            Image {
-                source: "images/close.png"
-
-                anchors.right: parent.right
+                width: parent.width
                 anchors.top: parent.top
-                anchors.margins: -5
 
-                MouseArea {
+                Rectangle {
+                    color: "#dbe3e2"
                     anchors.fill: parent
-                    onClicked: {
-                        container.flipped = !container.flipped
-                        clickedAnim.start()
-                    }
                 }
 
-                SequentialAnimation on scale {
-                    id: clickedAnim
-                    running: false
-                    NumberAnimation {
-                        to: 0.8
-                        duration: 100
+                Text {
+
+                    text: title
+
+                    color: "#374845"
+                    font.family: "Ubuntu"
+                    font.pointSize: 20
+
+
+                    anchors.left: backButton.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.leftMargin: 5
+                }
+
+                Image {
+                    id: backButton
+                    source: "images/back.png"
+
+                    anchors.left: parent.left
+                    anchors.rightMargin: 5
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: {
+                            clickedAnim.start()
+                            contentLoder.item.goBackAction()
+                        }
                     }
-                    NumberAnimation {
-                        to: 1.2
-                        duration: 100
+
+                    SequentialAnimation on scale {
+                        id: clickedAnim
+                        running: false
+                        NumberAnimation {
+                            to: 0.9
+                            duration: 100
+                        }
+                        NumberAnimation {
+                            to: 1.1
+                            duration: 100
+                        }
+                        NumberAnimation {
+                            to: 0.9
+                            duration: 100
+                        }
+                        NumberAnimation {
+                            to: 1
+                            duration: 100
+                        }
                     }
-                    NumberAnimation {
-                        to: 0.8
-                        duration: 100
-                    }
-                    NumberAnimation {
-                        to: 1
-                        duration: 100
+                }
+            }
+
+            Loader {
+                id: contentLoder
+
+                width: parent.width
+                clip: true
+//                source: startpage
+
+                anchors.top: bar.bottom
+                anchors.bottom: parent.bottom
+
+                onLoaded: {
+                    container.flipped = true
+                }
+
+                Connections {
+                    target: contentLoder.item
+
+                    onNeedToClose: {
+                        container.flipped = false
                     }
                 }
             }
@@ -152,11 +194,6 @@ Item {
         states: State {
             name: "back"
             when: container.flipped
-
-            PropertyChanges {
-                target: webView
-                url: adUrl
-            }
 
             PropertyChanges { target: rotation; angle: 180 }
 
@@ -207,9 +244,11 @@ Item {
 
                     NumberAnimation { target: container.parent; property: "opacity"; duration: 500 }
                 }
+            }
 
-                ScriptAction {
-                    script: webView.url = ""
+            onRunningChanged: {
+                if( !running ) {
+                    contentLoder.source = ""
                 }
             }
         }]
