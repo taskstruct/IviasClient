@@ -3,7 +3,7 @@ folder_01.source = qml/IviasClient
 folder_01.target = qml
 DEPLOYMENTFOLDERS = folder_01
 
-QT += quick opengl sql network
+QT += quick opengl sql network dbus
 
 # Additional import path used to resolve QML modules in Creator's code model
 QML_IMPORT_PATH =
@@ -37,10 +37,13 @@ SOURCES += main.cpp \
     helper.cpp \
     clickscounter.cpp \
     package.cpp \
+    powermanager.cpp \
     updater.cpp \
     advertisementslist.cpp \
     qmlsettingssingleton.cpp \
-    inputactivityfilter.cpp
+    inputactivityfilter.cpp \
+    upowerbackend.cpp \
+    dummypowerbackend.cpp
 
 # Please do not modify the following two lines. Required for deployment.
 # Please do not modify the following two lines. Required for deployment.
@@ -190,8 +193,11 @@ HEADERS += \
     advertisementslist.h \
     updater.h \
     package.h \
+    powermanager.h \
     constraints.h \
     qmlsettingssingleton.h \
     inputactivityfilter.h \
     clickscounter.h \
-    globals.h
+    globals.h \
+    upowerbackend.h \
+    dummypowerbackend.h
