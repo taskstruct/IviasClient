@@ -10,31 +10,7 @@ Window {
     width: 800
     height: 600
 
-    property alias initText: initScrText.text
     property alias screenLocked: screenSaver.locked
-    property bool initialized: false
-
-    Component.onCompleted: console.debug("onCompleted: " + initialized)
-
-    onInitializedChanged: console.debug("initialized: " + initialized)
-
-    Rectangle {
-        id: initialScreen
-        color: "black"
-
-        anchors.fill: parent
-
-        Text {
-            id: initScrText
-            color: "white"
-
-            text: "Initializing...<br>"
-            textFormat: Text.RichText
-
-            anchors.fill: parent
-            anchors.margins: 10
-        }
-    }
 
     ScreenSaver {
         id: screenSaver
@@ -99,7 +75,7 @@ Window {
         states: [
             State {
                 name: "ScreenLocked"
-                when: screenSaver.locked && !(seatbeltWarning.active && IviasSettings.showSeatbeltWarningEnabled) && window.initialized
+                when: screenSaver.locked && !(seatbeltWarning.active && IviasSettings.showSeatbeltWarningEnabled)
 
                 // rise up screensaver
                 PropertyChanges {
@@ -112,7 +88,7 @@ Window {
 
             State {
                 name: "Unlocked"
-                when: !screenSaver.locked && !(seatbeltWarning.active && IviasSettings.showSeatbeltWarningEnabled) && window.initialized
+                when: !screenSaver.locked && !(seatbeltWarning.active && IviasSettings.showSeatbeltWarningEnabled)
 
                 PropertyChanges {
                     target: mainView
@@ -124,7 +100,7 @@ Window {
 
             State {
                 name: "SeatbeltWarning"
-                when: seatbeltWarning.active && IviasSettings.showSeatbeltWarningEnabled && window.initialized
+                when: seatbeltWarning.active && IviasSettings.showSeatbeltWarningEnabled
 
                 PropertyChanges {
                     target: seatbeltWarning

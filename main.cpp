@@ -1,5 +1,6 @@
 #include <QtCore/QDebug>
 #include <QtCore/QSettings>
+#include <QtGui/QGuiApplication>
 #include <QtNetwork/QAuthenticator>
 #include <QtNetwork/QNetworkReply>
 #include <QtQml/qqml.h>
@@ -9,7 +10,8 @@
 #include <QtQuick/QQuickWindow>
 #include <QtSql/QSqlDatabase>
 #include <QtSql/QSqlQuery>
-#include <QtWidgets/QApplication>
+
+#include <iostream>
 
 #include "adsmodel.h"
 #include "advertisementslist.h"
@@ -17,14 +19,15 @@
 #include "globals.h"
 #include "helper.h"
 #include "inputactivityfilter.h"
-//#include "powermanager.h"
+#include "powermanager.h"
 #include "qmlsettingssingleton.h"
 #include "updater.h"
 
 const QLatin1String IviasClientDBConnection("icdbc");
 
 QNetworkAccessManager *gNetworkAccessManager;
-ClicksCounter *gClicksCounter = 0;
+ClicksCounter *gClicksCounter = Q_NULLPTR;
+PowerManager *gPowerManager = Q_NULLPTR;
 int gIviasClientID = 0;
 
 class IviasQmlNetworkAccessManagerFactory: public QQmlNetworkAccessManagerFactory {
@@ -58,11 +61,12 @@ static QObject *clicks_counter_singleton_provider(QQmlEngine *engine, QJSEngine 
     return gClicksCounter;
 }
 
-void showInitMessage(QObject *window, const QString msg)
+static QObject *power_manager_singleton_provider(QQmlEngine *engine, QJSEngine *scriptEngine)
 {
-    QString value = window->property("initText").toString();
-    value += msg + QLatin1Literal("<br>");
-    window->setProperty("initText", value);
+    Q_UNUSED(engine)
+    Q_UNUSED(scriptEngine)
+
+    return gPowerManager;
 }
 
 void onAuthenticationRequired(QNetworkReply *reply, QAuthenticator * authenticator)
@@ -97,7 +101,7 @@ void onNetworkAccessibleChanged ( QNetworkAccessManager::NetworkAccessibility ac
 
 int main(int argc, char *argv[])
 {
-    QApplication app(argc, argv);
+    QGuiApplication app(argc, argv);
     app.setOrganizationName( "Ivias" );
     app.setOrganizationDomain( "ivias.org" );
     app.setApplicationName( "IviasClient" );
@@ -105,10 +109,63 @@ int main(int argc, char *argv[])
     qmlRegisterType<AdsModel>( "IviasClient", 1, 0, "AdsModel" );;
 
     qmlRegisterSingletonType<QMLSettingsSingleton>("IviasClient", 1, 0, "IviasSettings", qml_settings_singleton_provider);
-    qmlRegisterSingletonType<QMLSettingsSingleton>("IviasClient", 1, 0, "ClickCounter", clicks_counter_singleton_provider);
+    qmlRegisterSingletonType<ClicksCounter>("IviasClient", 1, 0, "ClickCounter", clicks_counter_singleton_provider);
+    qmlRegisterSingletonType<PowerManager>("IviasClient", 1, 0, "PowerManager", power_manager_singleton_provider);
 
     // init network manager
     gNetworkAccessManager = new QNetworkAccessManager(&app);
+
+    // Read systemSettings.ini
+    QSettings systemSettings( Helper::getSystemSettingsPath(), QSettings::IniFormat, &app );
+    gIviasClientID = systemSettings.value("iviasClientID").toInt();
+
+    // init DB
+    std::cout << "Setup SQL access..." << std::endl;
+    QSqlDatabase db = QSqlDatabase::addDatabase( "QSQLITE", IviasClientDBConnection );
+
+    if(!db.isValid()) {
+        // unable to create a valid DB connection. Stop application
+        qDebug("Unable to create a valid DB connection");
+        return -1; //TODO: Show this as error message in app, because if app exits, plain  X server will be shown
+    }
+
+    db.setHostName(systemSettings.value("dbHostName").toString());
+//    db.setPort(systemSettings.value("dbPort", 3306));
+    db.setUserName(systemSettings.value("dbUserName").toString());
+    db.setPassword(systemSettings.value("dbPassword").toString());
+    db.setDatabaseName(systemSettings.value("dbDatabaseName").toString());
+    db.setConnectOptions("MYSQL_OPT_RECONNECT=1;CLIENT_SSL=1");
+
+    // load settings from settings.ini
+    std::cout << "Loading settings..." << std::endl;
+
+    if( gNetworkAccessManager->networkAccessible() == QNetworkAccessManager::Accessible )
+    {
+        if(!db.open())
+        {
+            std::cout << "ERROR: Unable to open DB, but network is accessible." << std::endl;
+//            return -2; //TODO: Show this as error message in app, because if app exits, plain  X server will be shown
+        }
+        else
+        {
+            QMLSettingsSingleton::instance()->refetchData();
+        }
+    }
+
+    // init power manager.
+    gPowerManager = new PowerManager(&app);
+    gPowerManager->init();
+
+//    QObject::connect( &pwMgr, SIGNAL(powerModeChanged(int)), &viewer, SLOT(powerModeChanged(int)) );
+
+    // create updater
+    Updater updater( &app );
+    QMetaObject::invokeMethod( &updater, "update", Qt::QueuedConnection );
+
+    // Now we can start listen for events from network manager
+    QObject::connect( gNetworkAccessManager, &QNetworkAccessManager::authenticationRequired, &onAuthenticationRequired );
+    QObject::connect( gNetworkAccessManager, &QNetworkAccessManager::networkAccessibleChanged, &onNetworkAccessibleChanged );
+
 
     // create window to display start up
     QQmlApplicationEngine engine(&app);
@@ -127,60 +184,6 @@ int main(int argc, char *argv[])
     window->show();
     window->showFullScreen();
     window->installEventFilter( new InputActivityFilter(window) );
-
-    // Read systemSettings.ini
-    QSettings systemSettings( Helper::getSystemSettingsPath(), QSettings::IniFormat, &app );
-    gIviasClientID = systemSettings.value("iviasClientID").toInt();
-
-    // init DB
-    showInitMessage(window, QLatin1Literal("Setup SQL access..."));
-    QSqlDatabase db = QSqlDatabase::addDatabase( "QSQLITE", IviasClientDBConnection );
-
-    if(!db.isValid()) {
-        // unable to create a valid DB connection. Stop application
-        qDebug("Unable to create a valid DB connection");
-        return -1; //TODO: Show this as error message in app, because if app exits, plain  X server will be shown
-    }
-
-    db.setHostName(systemSettings.value("dbHostName").toString());
-//    db.setPort(systemSettings.value("dbPort", 3306));
-    db.setUserName(systemSettings.value("dbUserName").toString());
-    db.setPassword(systemSettings.value("dbPassword").toString());
-    db.setDatabaseName(systemSettings.value("dbDatabaseName").toString());
-    db.setConnectOptions("MYSQL_OPT_RECONNECT=1;CLIENT_SSL=1");
-
-    // load settings from settings.ini
-    showInitMessage(window, QLatin1Literal("Loading settings..."));
-
-    if( gNetworkAccessManager->networkAccessible() == QNetworkAccessManager::Accessible )
-    {
-        if(!db.open())
-        {
-            showInitMessage( window, "ERROR: Unable to open DB, but network is accessible.");
-//            return -2; //TODO: Show this as error message in app, because if app exits, plain  X server will be shown
-        }
-        else
-        {
-            QMLSettingsSingleton::instance()->refetchData();
-        }
-    }
-
-//    PowerManager pwMgr( &app );
-//    pwMgr.start();
-
-//    QObject::connect( &pwMgr, SIGNAL(powerModeChanged(int)), &viewer, SLOT(powerModeChanged(int)) );
-
-    // create updater
-    Updater updater( &app );
-    updater.update();
-
-    // Now we can start listen for events from network manager
-    QObject::connect( gNetworkAccessManager, &QNetworkAccessManager::authenticationRequired, &onAuthenticationRequired );
-    QObject::connect( gNetworkAccessManager, &QNetworkAccessManager::networkAccessibleChanged, &onNetworkAccessibleChanged );
-
-    showInitMessage(window, QLatin1Literal("Done."));
-
-    window->setProperty("initialized", true);
 
     return app.exec();
 }
