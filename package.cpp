@@ -13,6 +13,7 @@
 
 const QString Package::TitleKey = QLatin1Literal("title");
 const QString Package::ThumbnailKey = QLatin1Literal("thumbnail");
+const QString Package::UIDKey = QLatin1Literal("uid");
 
 Package::Package( const int adIndex, QObject *parent) :
     QObject(parent),
@@ -181,8 +182,9 @@ bool Package::parseMetadata( const QString & fileName )
 
     m_title = metadata.value( TitleKey, "Title" ).toString();
     m_thumbnail = metadata.value( ThumbnailKey, "" ).toString();
+    m_uid = metadata.value( UIDKey, 0 ).toInt();
 
-    bool ok = ( !m_thumbnail.isEmpty() && QFile::exists( m_tmpPackagePath + "/main.qml" ) );
+    bool ok = ( !m_thumbnail.isEmpty() && QFile::exists( m_tmpPackagePath + "/main.qml" ) && ( m_uid != 0 ) );
 
     if(!ok) m_state = Error;
 

@@ -1,4 +1,5 @@
 #include "clickscounter.h"
+#include "advertisementslist.h"
 #include "globals.h"
 #include "helper.h"
 
@@ -9,11 +10,44 @@
 
 #include <QtCore/QDebug>
 
+//TODO: Move to globals
 extern QNetworkAccessManager *gNetworkAccessManager;
 extern const QLatin1String IviasClientDBConnection;
 
 ClicksCounter::ClicksCounter(QObject *parent) :
-    QObject(parent)
+    QObject(parent),
+    m_clicksQueue()
+{
+}
+
+ClicksCounter::~ClicksCounter()
+{
+    save();
+}
+
+void ClicksCounter::increment( int adUid )
+{
+    QSqlDatabase db = QSqlDatabase::database( IviasClientDBConnection );
+
+    qDebug() << "ClicksCounter::increment() " << adUid;
+
+    if( gNetworkAccessManager->networkAccessible() == QNetworkAccessManager::Accessible && db.isOpen() )
+    {
+        // update DB
+        const QLatin1Literal command("UPDATE Stats SET clicks = clicks+1 WHERE icId = %1 AND adUID = %2");
+        QSqlQuery query( QString(command).arg(gIviasClientID).arg(adUid), db );
+
+        if(!query.exec()) {
+            updateItem(adUid);
+        }
+    }
+    else
+    {
+        updateItem(adUid);
+    }
+}
+
+void ClicksCounter::init()
 {
     QSettings settings(Helper::getSettingsPath(), QSettings::IniFormat, this);
 
@@ -23,62 +57,12 @@ ClicksCounter::ClicksCounter(QObject *parent) :
     for( int i = 0; i < arraySize; ++i )
     {
         settings.setArrayIndex(i);
-        m_clicksQueue[i] = settings.value("adNum").toInt();
+        const int adUID = settings.value("aduid").toInt();
+        const int clicks = settings.value("clicks").toInt();
+        m_clicksQueue.insert( adUID, clicks );
     }
 
     settings.endArray();
-
-    // array is smaller than expected, fill others with zeroes
-    for( int i = arraySize; i < cTotalNumberOfAds; ++i )
-    {
-        m_clicksQueue[i] = 0;
-    }
-
-    for( int i = 0; i < cTotalNumberOfAds; ++i )
-    {
-        qDebug() << "No." << i << ": " << m_clicksQueue[i];
-    }
-}
-
-ClicksCounter::~ClicksCounter()
-{
-    qDebug() << "Saving clicks queue";
-
-    QSettings settings(Helper::getSettingsPath(), QSettings::IniFormat, this);
-    settings.beginWriteArray("clicksQueue");
-
-    for( int i = 0; i < cTotalNumberOfAds; ++i )
-    {
-        settings.setArrayIndex(i);
-        settings.setValue("adNum", m_clicksQueue[i]);
-    }
-
-    settings.endArray();
-}
-
-void ClicksCounter::increment( int page, int index )
-{
-    QSqlDatabase db = QSqlDatabase::database( IviasClientDBConnection );
-    const int id = page * cAdsPerPage + index;
-
-    qDebug() << "ClicksCounter::increment( int page, int index ) " << page << " " << index;
-
-    if( gNetworkAccessManager->networkAccessible() == QNetworkAccessManager::Accessible && db.isOpen() )
-    {
-        // update DB
-        const QLatin1Literal command("UPDATE Stats SET clicks = clicks+1 WHERE icId = %1 AND adIndex = %2");
-        QSqlQuery query( QString(command).arg(gIviasClientID).arg(id), db );
-
-        if(!query.exec()) {
-            // error. Add click to queue
-            m_clicksQueue[id]++;
-        }
-    }
-    else
-    {
-        // update queue
-        m_clicksQueue[id]++;
-    }
 }
 
 void ClicksCounter::flushQueue()
@@ -87,17 +71,61 @@ void ClicksCounter::flushQueue()
 
     if( gNetworkAccessManager->networkAccessible() == QNetworkAccessManager::Accessible && db.isOpen() )
     {
-        const QLatin1Literal command("UPDATE stats SET clicks = clicks+%1 WHERE cid = %2 AND adId = %3");
+        const QLatin1Literal command("UPDATE stats SET clicks = clicks+%1 WHERE cid = %2 AND adUID = %3");
 
-        for( int i = 0; i < cTotalNumberOfAds; i++ )
-        {
-            if( m_clicksQueue[i] != 0 ) {
-                QSqlQuery query( QString(command).arg(m_clicksQueue[i]).arg(gIviasClientID).arg(i), db );
+        QMapIterator<int, int> iter(m_clicksQueue);
+        while (iter.hasNext()) {
+            iter.next();
+
+            if( iter.value() != 0 ) {
+                QSqlQuery query( QString(command).arg(iter.value()).arg(gIviasClientID).arg(iter.key()), db );
 
                 if( query.exec() ) {
-                    m_clicksQueue[i] = 0;
+                    m_clicksQueue[iter.key()] = 0;
                 }
             }
         }
     }
+
+    // remove all send values
+    save();
+}
+
+
+void ClicksCounter::updateItem(int uid)
+{
+    if( m_clicksQueue.contains(uid) ) {
+        m_clicksQueue[uid]++;
+    }
+    else {
+        m_clicksQueue.insert( uid, 1 );
+    }
+}
+
+void ClicksCounter::save()
+{
+    qDebug() << "Saving clicks queue";
+
+    QSettings settings(Helper::getSettingsPath(), QSettings::IniFormat, this);
+
+    settings.clear();
+
+    settings.beginWriteArray("clicksQueue");
+
+    QMapIterator<int, int> iter(m_clicksQueue);
+    int i = 0;
+    while (iter.hasNext()) {
+        iter.next();
+
+        settings.setArrayIndex(i);
+
+        // save only not send values
+        if( iter.value() != 0 ) {
+            settings.setValue("aduid", iter.key());
+            settings.setValue("clicks", iter.value());
+            ++i;
+        }
+    }
+
+    settings.endArray();
 }

@@ -2,7 +2,7 @@
 #define CLICKSCOUNTER_H
 
 #include <QtCore/QObject>
-#include <QtCore/QPair>
+#include <QtCore/QMap>
 
 #include "constraints.h"
 
@@ -13,14 +13,16 @@ public:
     explicit ClicksCounter(QObject *parent = 0);
     ~ClicksCounter();
 
-    Q_INVOKABLE void increment( int page, int index );
+    Q_INVOKABLE void increment(int adUid);
 
+    void init();
     void flushQueue();
     
-    //TODO: Save queue on exit, if there are unupdated values
-
 private:
-    int m_clicksQueue[cTotalNumberOfAds];
+    void updateItem(int uid);
+    void save();
+
+    QMap<int, int> m_clicksQueue;
 };
 
 #endif // CLICKSCOUNTER_H

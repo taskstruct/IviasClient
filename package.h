@@ -21,12 +21,14 @@ class Package : public QObject
 
     static const QString TitleKey;
     static const QString ThumbnailKey;
+    static const QString UIDKey;
 
 public:
     explicit Package( QObject *parent = 0);
     explicit Package( const int adIndex, QObject *parent = 0);
     virtual ~Package();
 
+    int uid() const { return m_uid; }
     const QString title() const;
     const QString thumbnail() const;
     const QString packagePath() const;
@@ -59,6 +61,7 @@ private:
     State m_state;
 
     int m_adIndex;
+    int m_uid;
     QDateTime m_lastModified;
 
     QString m_title;
