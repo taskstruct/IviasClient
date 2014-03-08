@@ -81,9 +81,8 @@ Item {
                 onClicked: {
                     if( !container.flipped )
                     {
-                        contentLoder.source = adsModel.directory + "Ad" + index * adsModel.page * 6 + "/main.qml"
-                        console.debug("Fron clicked")
-                        ClickCounter.increment(container.page, index);
+                        contentLoder.source = adsModel.directory + "Ad" + (index + adsModel.page * 6) + "/main.qml"
+                        ClickCounter.increment(aduid);
                     }
                 }
             }
