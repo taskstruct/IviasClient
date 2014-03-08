@@ -17,6 +17,8 @@ public:
 
     static AdvertisementsList *instance();
 
+    void init();
+
 //    void append(const AdType &ad);
     const Package & at ( int i ) const;
     void replace( int i, Package *newPgk );

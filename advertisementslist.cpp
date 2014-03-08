@@ -17,15 +17,10 @@ AdvertisementsList *AdvertisementsList::self = 0;
 AdvertisementsList::AdvertisementsList(QObject * parent):
     QObject(parent)
 {
-    for( int i = 0; i < cTotalNumberOfAds; ++i )
-    {
-        m_ads[i] = new Package( i, this );
-        m_ads[i]->load();
-    }
 }
+
 AdvertisementsList::~AdvertisementsList()
 {
-
 }
 
 AdvertisementsList *AdvertisementsList::instance()
@@ -36,6 +31,15 @@ AdvertisementsList *AdvertisementsList::instance()
     }
 
     return self;
+}
+
+void AdvertisementsList::init()
+{
+    for( int i = 0; i < cTotalNumberOfAds; ++i )
+    {
+        m_ads[i] = new Package( i, this );
+        m_ads[i]->load();
+    }
 }
 
 //void AdvertisementsList::append(const AdType &ad)

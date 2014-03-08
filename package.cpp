@@ -109,11 +109,11 @@ void Package::unpackFinished( int exitCode )
         return;
     }
 
-    m_tmpPackagePath = list.at(0).absoluteFilePath();
+    m_tmpPackagePath = list.at(0).absoluteFilePath() + QChar('/');
 
     qDebug() << "Searching for .metadata in " << m_tmpPackagePath;
 
-    bool ok = parseMetadata( m_tmpPackagePath + "/.metadata" );
+    bool ok = parseMetadata( m_tmpPackagePath );
 
     if(ok) {
         m_isValid = true;
@@ -172,21 +172,25 @@ void Package::recursiveRemove(const QString &dirName)
 }
 
 
-bool Package::parseMetadata( const QString & fileName )
+bool Package::parseMetadata( const QString & pkgPath )
 {
-    if( !QFile::exists(fileName) ) {
+    QString metadataFileName = pkgPath + ".metadata";
+
+    if( !QFile::exists(metadataFileName) ) {
         return false;
     }
 
-    QSettings metadata( fileName, QSettings::IniFormat );
+    QSettings metadata( metadataFileName, QSettings::IniFormat );
 
     m_title = metadata.value( TitleKey, "Title" ).toString();
     m_thumbnail = metadata.value( ThumbnailKey, "" ).toString();
     m_uid = metadata.value( UIDKey, 0 ).toInt();
 
-    bool ok = ( !m_thumbnail.isEmpty() && QFile::exists( m_tmpPackagePath + "/main.qml" ) && ( m_uid != 0 ) );
+    bool ok = ( !m_thumbnail.isEmpty() && QFile::exists( pkgPath + "main.qml" ) && ( m_uid != 0 ) );
 
-    if(!ok) m_state = Error;
+    if(!ok) {
+        m_state = Error;
+    }
 
     return ok;
 }
@@ -211,7 +215,7 @@ void Package::finish()
 
     s.setValue( key, m_lastModified );
 
-    qDebug() << "Saving package[" << m_adIndex << "] with timestamp = " << m_lastModified;
+//    qDebug() << "Saving package[" << m_adIndex << "] with timestamp = " << m_lastModified;
 }
 
 void Package::load()
@@ -223,7 +227,7 @@ void Package::load()
         return;
     }
 
-    if(!parseMetadata( m_packagePath + ".metadata" )) {
+    if(!parseMetadata( m_packagePath )) {
         m_isValid = false;
         return;
     }

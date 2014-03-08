@@ -54,7 +54,7 @@ public slots:
 
 private:
 
-    bool parseMetadata( const QString & fileName );
+    bool parseMetadata(const QString & pkgPath );
 
     void recursiveRemove( const QString & dirName );
 
