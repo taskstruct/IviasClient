@@ -38,6 +38,9 @@ QVariant AdsModel::data(const QModelIndex &index, int role) const
             case ThumbnailPathRole:
                 retVal = AdvertisementsList::instance()->at( m_page * cAdsPerPage + row ).thumbnail();
                 break;
+            case UIDRole:
+                retVal = AdvertisementsList::instance()->at( m_page * cAdsPerPage + row ).uid();
+                break;
             default:
                 break;
             }
@@ -80,6 +83,7 @@ QHash<int,QByteArray> AdsModel::roleNames() const
     QHash< int, QByteArray > roles;
     roles[ TitleRole ] = "title";
     roles[ ThumbnailPathRole ] = "thumbnail";
+    roles[ UIDRole ] = "aduid";
 
     return roles;
 }
