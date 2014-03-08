@@ -54,10 +54,6 @@ static QObject *clicks_counter_singleton_provider(QQmlEngine *engine, QJSEngine 
     Q_UNUSED(engine)
     Q_UNUSED(scriptEngine)
 
-    if( !gClicksCounter ) {
-        gClicksCounter = new ClicksCounter();
-    }
-
     return gClicksCounter;
 }
 
@@ -152,11 +148,14 @@ int main(int argc, char *argv[])
         }
     }
 
+    AdvertisementsList::instance()->init();
+
+    gClicksCounter = new ClicksCounter(&app);
+    gClicksCounter->init();
+
     // init power manager.
     gPowerManager = new PowerManager(&app);
     gPowerManager->init();
-
-//    QObject::connect( &pwMgr, SIGNAL(powerModeChanged(int)), &viewer, SLOT(powerModeChanged(int)) );
 
     // create updater
     Updater updater( &app );
