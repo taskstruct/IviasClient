@@ -10,6 +10,7 @@ public:
     PowerBackendIface(QObject *parent = 0);
     virtual ~PowerBackendIface() {}
 
+    virtual bool isOnBattery() const = 0;
 signals:
     void batteryChanged(double newValue);
 
@@ -29,6 +30,7 @@ public:
     void init();
 
     qreal getBattery() const { return m_batteryValue; }
+    bool isOnBattery() const { return m_backend->isOnBattery(); }
 
 signals:
     // used in QML

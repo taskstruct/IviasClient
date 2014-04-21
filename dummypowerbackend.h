@@ -10,6 +10,8 @@ public:
     explicit DummyPowerBackend(QObject *parent = 0);
     ~DummyPowerBackend() {}
 
+    bool isOnBattery() const { return false; }
+
 protected:
      void timerEvent(QTimerEvent *event);
 

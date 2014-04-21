@@ -5,48 +5,91 @@
 
 #include <QDebug>
 
-UPowerBackend::UPowerBackend(QObject *parent): PowerBackendIface(parent),
-    m_dbusIface("org.freedesktop.UPower",
-                "/org/freedesktop/UPower/devices/battery_BAT0",
-                "org.freedesktop.UPower.Device",
-                QDBusConnection::systemBus())
+const QString cUPowerService( QStringLiteral("org.freedesktop.UPower") );
+const QString cUPowerInterface( QStringLiteral("org.freedesktop.UPower") );
+const QString cUPowerPath( QStringLiteral("/org/freedesktop/UPower") );
+const QString cDeviceInterface( QStringLiteral("org.freedesktop.UPower.Device") );
+const QString cDBusPropertiesInterface( QStringLiteral("org.freedesktop.DBus.Properties") );
+
+UPowerBackend::UPowerBackend(QObject *parent): PowerBackendIface(parent)
 {
-    m_percentage = getPercentage();
+    QDBusMessage call = QDBusMessage::createMethodCall( cUPowerService, cUPowerPath, cUPowerInterface, "EnumerateDevices" );
+    QDBusPendingCall pendingCall = QDBusConnection::systemBus().asyncCall(call);
+    QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher( pendingCall, this );
 
-    qDebug() << "BATTERY: " << m_percentage;
-
-    QDBusConnection::systemBus().connect( m_dbusIface.service(), m_dbusIface.path(), m_dbusIface.interface(), "Changed", this, SLOT(propertyChangedSlot()) );
+    connect( watcher, &QDBusPendingCallWatcher::finished, this, &UPowerBackend::onEnumerateDevicesFinished );
 }
 
-void UPowerBackend::propertyChangedSlot()
+void UPowerBackend::onEnumerateDevicesFinished(QDBusPendingCallWatcher *watcher)
 {
-    // some value changed. Check if it is percentage
+    QDBusPendingReply< QList<QDBusObjectPath> > reply = *watcher;
 
-    const double newValue = getPercentage();
+    if( !reply.isError() )
+    {
+        for( auto &e: reply.value() )
+        {
+            const QString &p = e.path();
 
-    if( newValue != m_percentage ) {
-        m_percentage = newValue;
-        emit batteryChanged(m_percentage);
+            qDebug() << e.path();
+
+            if( p.contains( QStringLiteral("battery_BAT0") ) )
+            {
+                m_battPath = p;
+                setupBattery();
+                break;
+            }
+        }
     }
-}
-
-double UPowerBackend::getPercentage() const
-{
-    double value = 0.0;
-    QDBusMessage call = QDBusMessage::createMethodCall( m_dbusIface.service(), m_dbusIface.path(), "org.freedesktop.DBus.Properties", "Get");
-    call << m_dbusIface.interface();
-    call << "Percentage";
-
-    QDBusPendingReply<QVariant> reply = QDBusConnection::systemBus().asyncCall(call);
-    reply.waitForFinished();
-
-    if (reply.isValid()) {
-        value = reply.value().toDouble();
-    }
-    else {
+    else
+    {
         qDebug() << reply.error().name();
         qDebug() << reply.error().message();
     }
 
-    return value;
+    watcher->deleteLater();
+}
+
+void UPowerBackend::onPropertyChanged()
+{
+    // some value changed. Check if it is percentage
+    updatePercentage();
+}
+
+void UPowerBackend::setupBattery()
+{
+    updatePercentage();
+    QDBusConnection::systemBus().connect( cUPowerService, m_battPath, cDeviceInterface, "Changed", this, SLOT(onPropertyChanged()) );
+}
+
+void UPowerBackend::updatePercentage()
+{
+    QDBusMessage call = QDBusMessage::createMethodCall( cUPowerService, m_battPath, cDBusPropertiesInterface, "Get" );
+    call << cDeviceInterface;
+    call << "Percentage";
+    QDBusPendingCall pendingCall = QDBusConnection::systemBus().asyncCall(call);
+    QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher( pendingCall, this );
+
+    connect( watcher, &QDBusPendingCallWatcher::finished, this, &UPowerBackend::onPercentageFinished );
+}
+
+void UPowerBackend::onPercentageFinished(QDBusPendingCallWatcher *watcher)
+{
+    QDBusPendingReply< QVariant > reply = *watcher;
+
+    if( !reply.isError() )
+    {
+        const double newValue = reply.value().toDouble();
+        if( newValue != m_percentage ) {
+            m_percentage = newValue;
+            qDebug() << "New battery value: " << m_percentage;
+            emit batteryChanged(m_percentage);
+        }
+    }
+    else
+    {
+        qDebug() << reply.error().name();
+        qDebug() << reply.error().message();
+    }
+
+    watcher->deleteLater();
 }

@@ -5,6 +5,8 @@
 
 #include "powermanager.h"
 
+class QDBusPendingCallWatcher;
+
 class UPowerBackend: public PowerBackendIface
 {
     Q_OBJECT
@@ -13,14 +15,20 @@ public:
     UPowerBackend( QObject *parent = 0 );
     ~UPowerBackend() {}
 
+    bool isOnBattery() const { return m_isOnBatt; }
+
 private slots:
-    void propertyChangedSlot();
+    void onEnumerateDevicesFinished(QDBusPendingCallWatcher *watcher);
+    void onPropertyChanged();
+    void onPercentageFinished(QDBusPendingCallWatcher *watcher);
 
 private:
-    double getPercentage() const;
+    void setupBattery();
+    void updatePercentage();
 
-    QDBusInterface m_dbusIface;
-    double m_percentage;
+    QString m_battPath = QString();
+    double m_percentage = 0.0;
+    bool m_isOnBatt = false;
 };
 
 #endif // UPOWERBACKEND_H
