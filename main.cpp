@@ -25,7 +25,7 @@
 
 const QLatin1String IviasClientDBConnection("icdbc");
 
-QNetworkAccessManager *gNetworkAccessManager;
+QNetworkAccessManager *gNetworkAccessManager = Q_NULLPTR;
 ClicksCounter *gClicksCounter = Q_NULLPTR;
 PowerManager *gPowerManager = Q_NULLPTR;
 int gIviasClientID = 0;
@@ -165,6 +165,8 @@ int main(int argc, char *argv[])
     QObject::connect( gNetworkAccessManager, &QNetworkAccessManager::authenticationRequired, &onAuthenticationRequired );
     QObject::connect( gNetworkAccessManager, &QNetworkAccessManager::networkAccessibleChanged, &onNetworkAccessibleChanged );
 
+    QObject::connect( gPowerManager, &PowerManager::powerSupplyPlugedIn, &updater, &Updater::update );
+
 
     // create window to display start up
     QQmlApplicationEngine engine(&app);
@@ -176,8 +178,8 @@ int main(int argc, char *argv[])
     QQuickWindow *window = qobject_cast<QQuickWindow *>(topLevel);
 
     if ( !window ) {
-        qWarning("Error: Your root item has to be a Window.");
-        return -1;
+        qDebug("Error: Your root item has to be a Window.");
+        return -3;
     }
 
     window->show();

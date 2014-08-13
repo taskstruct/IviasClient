@@ -15,6 +15,7 @@
 #include "advertisementslist.h"
 #include "globals.h"
 #include "helper.h"
+#include "powermanager.h"
 #include "qmlsettingssingleton.h"
 
 Updater::Updater(QObject *parent) :
@@ -27,11 +28,8 @@ Updater::Updater(QObject *parent) :
 
 void Updater::update()
 {
-    if( 0 == m_timerId )
+    if( QMLSettingsSingleton::instance()->url().isValid() )
     {
-        // update times has expired
-        m_currentAdIndex = -1;
-
         requestNext();
 
         qDebug() << "Starting update ...";
@@ -40,6 +38,9 @@ void Updater::update()
 
 void Updater::finishUpdate()
 {
+    // update times has expired
+    m_currentAdIndex = -1;
+
     // restart timer
     m_timerId = startTimer( QMLSettingsSingleton::instance()->updateInterval() );
     m_state = Sleeping;
@@ -86,7 +87,7 @@ void Updater::requestFile()
     QNetworkRequest request( m_currentAdUrl );
     QNetworkReply *reply = gNetworkAccessManager->get( request );
 
-    connect( reply, SIGNAL(finished()), this, SLOT(downloadFinished()) );
+    connect( reply, &QNetworkReply::finished, this, &Updater::downloadFinished );
 
     m_state = Downloading;
 }
@@ -117,7 +118,7 @@ void Updater::downloadFinished()
                     m_pkg = new Package( m_currentAdIndex );
                     m_pkg->setLastModified( reply->header( QNetworkRequest::LastModifiedHeader ).toDateTime() );
 
-                    connect( m_pkg, SIGNAL(packageReady(bool)), this, SLOT(packageUnpacked(bool)) );
+                    connect( m_pkg, &Package::packageReady, this, &Updater::packageUnpacked );
 
                     m_pkg->unpack();
 
@@ -165,7 +166,7 @@ void Updater::requestLastModfied()
     QNetworkRequest request( m_currentAdUrl );
 
     QNetworkReply * reply = gNetworkAccessManager->head( request );
-    connect( reply, SIGNAL(finished()), this, SLOT(headersReceived()) );
+    connect( reply, &QNetworkReply::finished, this, &Updater::headersReceived );
     m_state = GettingHeaders;
 }
 
@@ -212,6 +213,11 @@ void Updater::headersReceived()
 
 void Updater::requestNext()
 {
+    if( !canMakeUpdate() )
+    {
+        return;
+    }
+
     ++m_currentAdIndex;
 
     if( m_currentAdIndex < cTotalNumberOfAds )
@@ -223,4 +229,27 @@ void Updater::requestNext()
     {
         finishUpdate();
     }
+}
+
+bool Updater::canMakeUpdate() const
+{
+    if( 0 != m_timerId )
+    {
+        // update timer isn't finished
+        return false;
+    }
+
+    if( gNetworkAccessManager->networkAccessible() != QNetworkAccessManager::Accessible )
+    {
+        // no network
+        return false;
+    }
+
+    if( gPowerManager->isOnBattery() )
+    {
+        // update only when AC power is on
+        return false;
+    }
+
+    return true;
 }

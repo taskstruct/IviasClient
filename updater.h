@@ -47,6 +47,8 @@ private:
     void requestLastModfied();
     void requestNext();
 
+    bool canMakeUpdate() const;
+
     UpdaterState m_state;
 
     int m_currentAdIndex;

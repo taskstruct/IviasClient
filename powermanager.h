@@ -40,6 +40,9 @@ signals:
     void batteryBackToLow();
     void batteryBackToNormal();
 
+    void powerSupplyPlugedIn();
+    void powerSupplyPlugedOut();
+
 private slots:
     void onBatteryChanged( double value );
 
