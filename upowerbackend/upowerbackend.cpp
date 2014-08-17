@@ -11,8 +11,20 @@ const QString cUPowerPath( QStringLiteral("/org/freedesktop/UPower") );
 const QString cDeviceInterface( QStringLiteral("org.freedesktop.UPower.Device") );
 const QString cDBusPropertiesInterface( QStringLiteral("org.freedesktop.DBus.Properties") );
 
-UPowerBackend::UPowerBackend(QObject *parent): PowerBackendIface(parent)
+const char* cOnBattProp = "OnBattery";
+const char* cPercentageProp = "Percentage";
+
+#include <QMetaMethod>
+#include <QMetaProperty>
+#include <cstring>
+
+UPowerBackend::UPowerBackend(QObject *parent): QObject(parent), PowerBackendIface(),
+    m_uPowerIFace( new QDBusInterface( cUPowerService, cUPowerPath, cUPowerInterface, QDBusConnection::systemBus(), this ) )
 {
+    m_isOnBatt = m_uPowerIFace->property( cOnBattProp ).toBool();
+
+    QDBusConnection::systemBus().connect( cUPowerService, cUPowerPath, cUPowerInterface, "Changed", this, SLOT(onUPowerPropertyChanged()) );
+
     QDBusMessage call = QDBusMessage::createMethodCall( cUPowerService, cUPowerPath, cUPowerInterface, "EnumerateDevices" );
     QDBusPendingCall pendingCall = QDBusConnection::systemBus().asyncCall(call);
     QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher( pendingCall, this );
@@ -30,12 +42,19 @@ void UPowerBackend::onEnumerateDevicesFinished(QDBusPendingCallWatcher *watcher)
         {
             const QString &p = e.path();
 
-            qDebug() << e.path();
+            qDebug() << p;
 
             if( p.contains( QStringLiteral("battery_BAT0") ) )
             {
                 m_battPath = p;
-                setupBattery();
+
+                QDBusConnection sysBus( QDBusConnection::systemBus() );
+
+                sysBus.connect( cUPowerService, m_battPath, cDeviceInterface, "Changed", this, SLOT(onBatteryPropertyChanged()) );
+
+                m_battDevIFace = new QDBusInterface( cUPowerService, m_battPath, cDeviceInterface, sysBus, this );
+                m_percentage = m_battDevIFace->property( cPercentageProp ).toDouble();
+
                 break;
             }
         }
@@ -49,47 +68,24 @@ void UPowerBackend::onEnumerateDevicesFinished(QDBusPendingCallWatcher *watcher)
     watcher->deleteLater();
 }
 
-void UPowerBackend::onPropertyChanged()
+void UPowerBackend::onUPowerPropertyChanged()
+{
+    const bool newVal = m_uPowerIFace->property( cOnBattProp ).toBool();
+
+    if( newVal != m_isOnBatt ) {
+        m_isOnBatt = newVal;
+        emit powerSourceChanged( m_isOnBatt );
+    }
+}
+
+void UPowerBackend::onBatteryPropertyChanged()
 {
     // some value changed. Check if it is percentage
-    updatePercentage();
-}
 
-void UPowerBackend::setupBattery()
-{
-    updatePercentage();
-    QDBusConnection::systemBus().connect( cUPowerService, m_battPath, cDeviceInterface, "Changed", this, SLOT(onPropertyChanged()) );
-}
+    const double newVal = m_battDevIFace->property( cPercentageProp ).toDouble();
 
-void UPowerBackend::updatePercentage()
-{
-    QDBusMessage call = QDBusMessage::createMethodCall( cUPowerService, m_battPath, cDBusPropertiesInterface, "Get" );
-    call << cDeviceInterface;
-    call << "Percentage";
-    QDBusPendingCall pendingCall = QDBusConnection::systemBus().asyncCall(call);
-    QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher( pendingCall, this );
-
-    connect( watcher, &QDBusPendingCallWatcher::finished, this, &UPowerBackend::onPercentageFinished );
-}
-
-void UPowerBackend::onPercentageFinished(QDBusPendingCallWatcher *watcher)
-{
-    QDBusPendingReply< QVariant > reply = *watcher;
-
-    if( !reply.isError() )
-    {
-        const double newValue = reply.value().toDouble();
-        if( newValue != m_percentage ) {
-            m_percentage = newValue;
-            qDebug() << "New battery value: " << m_percentage;
-            emit batteryChanged(m_percentage);
-        }
+    if( newVal != m_percentage ) {
+        m_percentage = newVal;
+        emit batteryValueChanged(m_percentage);
     }
-    else
-    {
-        qDebug() << reply.error().name();
-        qDebug() << reply.error().message();
-    }
-
-    watcher->deleteLater();
 }
