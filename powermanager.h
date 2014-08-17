@@ -3,25 +3,13 @@
 
 #include <QObject>
 
-class PowerBackendIface: public QObject
-{
-    Q_OBJECT
-public:
-    PowerBackendIface(QObject *parent = 0);
-    virtual ~PowerBackendIface() {}
-
-    virtual bool isOnBattery() const = 0;
-signals:
-    void batteryChanged(double newValue);
-
-private:
-};
+#include "powerbackendiface.h"
 
 class PowerManager : public QObject
 {
     Q_OBJECT
 
-    Q_PROPERTY(qreal battery READ getBattery NOTIFY batteryChanged)
+    Q_PROPERTY(qreal battery READ getBattery NOTIFY batteryValueChanged)
 
 public:
     explicit PowerManager(QObject *parent = 0);
@@ -30,11 +18,11 @@ public:
     void init();
 
     qreal getBattery() const { return m_batteryValue; }
-    bool isOnBattery() const { return m_backend->isOnBattery(); }
+    bool isOnBattery() const { return qobject_cast<PowerBackendIface*>( m_backend )->isOnBattery(); }
 
 signals:
     // used in QML
-    void batteryChanged();
+    void batteryValueChanged();
     void batteryLow();
     void batteryCritical();
     void batteryBackToLow();
@@ -44,10 +32,11 @@ signals:
     void powerSupplyPlugedOut();
 
 private slots:
-    void onBatteryChanged( double value );
+    void onBatteryValueChanged( double value );
+    void onPowerSourceChanged( bool isOnBatt );
 
 private:
-    PowerBackendIface *m_backend;
+    QObject *m_backend;
     double m_batteryValue;
 };
 

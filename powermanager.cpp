@@ -1,54 +1,18 @@
-#include <QtCore/QFile>
-#include <QtCore/QTextStream>
+#include <QtCore/QCoreApplication>
+#include <QtCore/QDir>
+#include <QtCore/QJsonObject>
+#include <QtCore/QJsonValue>
+#include <QtCore/QObject>
+#include <QtCore/QPluginLoader>
+#include <QtCore/QString>
 
 #include "powermanager.h"
-
-#include "upowerbackend.h"
 #include "dummypowerbackend.h"
 
 #include <QDebug>
 
 static const double cCriticalLevel = 5.0;
 static const double cLowLevel = 15.0;
-
-static bool isUbuntu()
-{
-    QFile os_release("/etc/os-release");
-
-    if( !os_release.exists() ) {
-        return false;
-    }
-
-    if( !os_release.open( QIODevice::ReadOnly ) ) {
-        return false;
-    }
-
-    QTextStream stream(&os_release);
-    QString line;
-
-    do {
-      line = stream.readLine();
-
-      if( line.startsWith( QLatin1String("ID="), Qt::CaseInsensitive ) ) {
-          QStringList lineSplit = line.split( QChar('=') );
-
-          if( lineSplit.at(1).compare( QLatin1String("ubuntu"), Qt::CaseInsensitive ) == 0 ) {
-              return true;
-          }
-      }
-
-    }
-    while( !line.isNull() );
-
-    return false;
-}
-
-PowerBackendIface::PowerBackendIface(QObject *parent):
-    QObject(parent)
-{
-}
-
-
 
 PowerManager::PowerManager(QObject *parent) :
     QObject(parent),
@@ -66,20 +30,61 @@ PowerManager::~PowerManager()
 
 void PowerManager::init()
 {
-    if( isUbuntu() ) {
-        qDebug() << "Creating Ubuntu backend";
-        m_backend = new UPowerBackend(this);
+    QDir pluginsDir( qApp->applicationDirPath() );
+
+    m_backend = Q_NULLPTR;
+
+    if( pluginsDir.cd("plugins") )
+    {
+        for( const QString pluginName: pluginsDir.entryList(QDir::Files) )
+        {
+            qDebug() << "PluginName: " << pluginName;
+
+            QPluginLoader pluginLoader( pluginsDir.absoluteFilePath(pluginName) );
+
+            const QJsonObject metaData = pluginLoader.metaData();
+
+            const QJsonValue pluginType = metaData.value("type");
+
+            qDebug() << "Metadata is undefined? " << pluginType.isUndefined();
+
+//            if( !pluginType.isUndefined() && pluginType.isString() )
+//            {
+//                if( pluginType.toString().compare( "powerbackend", Qt::CaseInsensitive ) == 0 )
+//                {
+                    m_backend = pluginLoader.instance();
+
+                    PowerBackendIface* backendIFace = qobject_cast< PowerBackendIface* >(m_backend);
+
+                    if( Q_NULLPTR != backendIFace )
+                    {
+                        qDebug() << "Power manager plugin loaded!";
+                        break;
+                    }
+                    else
+                    {
+                        // Backend does not implement PowerBackendIface
+                        m_backend = Q_NULLPTR;
+                    }
+//                }
+//            }
+        }
     }
-    else {
-        qDebug() << "Creating dummy backend";
+
+    if( Q_NULLPTR == m_backend )
+    {
+        qDebug() << "No backend found. Creating dummy one";
         m_backend = new DummyPowerBackend(this);
     }
 
-    connect( m_backend, &PowerBackendIface::batteryChanged, this, &PowerManager::onBatteryChanged );
+    connect( m_backend, SIGNAL(batteryValueChanged(double)), this, SLOT(onBatteryValueChanged(double)) );
+    connect( m_backend, SIGNAL(powerSourceChanged(bool)), this, SLOT(onPowerSourceChanged(bool)) );
 }
 
-void PowerManager::onBatteryChanged(double value)
+void PowerManager::onBatteryValueChanged(double value)
 {
+    qDebug() << Q_FUNC_INFO << " value = " << value;
+
     const double oldValue = m_batteryValue;
 
     m_batteryValue = value;
@@ -102,5 +107,18 @@ void PowerManager::onBatteryChanged(double value)
             emit batteryBackToNormal();
         }
     }
-    emit batteryChanged();
+
+    emit batteryValueChanged();
+}
+
+void PowerManager::onPowerSourceChanged(bool isOnBatt)
+{
+    qDebug() << Q_FUNC_INFO << " isOnBatt = " << isOnBatt;
+
+    if( isOnBatt ) {
+        emit powerSupplyPlugedIn();
+    }
+    else {
+        emit powerSupplyPlugedOut();
+    }
 }

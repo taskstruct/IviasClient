@@ -3,7 +3,8 @@
 #include "dummypowerbackend.h"
 
 DummyPowerBackend::DummyPowerBackend(QObject *parent) :
-    PowerBackendIface(parent)
+    QObject(parent),
+    PowerBackendIface()
 {
     // 10 mins
     m_tid = startTimer( 10 * 60 * 1000 );
@@ -17,13 +18,17 @@ void DummyPowerBackend::timerEvent(QTimerEvent *event)
     if( event->timerId() == m_tid ) {
         if( qFuzzyCompare( value, 100.0 ) ) {
             step = -step;
+
+            emit powerSourceChanged( true );
         }
 
         if( qFuzzyCompare( value, 0.0 ) ) {
             step = -step;
+
+            emit powerSourceChanged( false );
         }
 
         value += step;
-        emit batteryChanged(value);
+        emit batteryValueChanged(value);
     }
 }
