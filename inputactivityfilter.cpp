@@ -8,6 +8,7 @@ InputActivityFilter::InputActivityFilter(QObject *parent) :
     QObject(parent),
     m_timerId(0)
 {
+    m_timerId = startTimer(10*60*1000);
 }
 
 bool InputActivityFilter::eventFilter(QObject *obj, QEvent *event)
@@ -25,7 +26,7 @@ bool InputActivityFilter::eventFilter(QObject *obj, QEvent *event)
     }
 
     // standard event processing
-    return QObject::eventFilter(obj, event);
+    return false;
 }
 
 void InputActivityFilter::timerEvent(QTimerEvent *event )
