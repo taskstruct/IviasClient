@@ -14,16 +14,19 @@ public:
     explicit DummyPowerBackend(QObject *parent = 0);
     ~DummyPowerBackend() {}
 
-    bool isOnBattery() const { return false; }
+    bool isOnBattery() const { return m_step < 0.0; }
 
 signals:
     void batteryValueChanged(double value);
     void powerSourceChanged( bool isOnBatt );
 
 protected:
-     void timerEvent(QTimerEvent *event);
+    void timerEvent(QTimerEvent *event);
 
 private:
+    double m_value = 100.0;
+    double m_step = 1.0;
+
     int m_tid;
 };
 

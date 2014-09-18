@@ -23,6 +23,8 @@ UPowerBackend::UPowerBackend(QObject *parent): QObject(parent), PowerBackendIfac
 {
     m_isOnBatt = m_uPowerIFace->property( cOnBattProp ).toBool();
 
+    emit powerSourceChanged( m_isOnBatt );
+
     QDBusConnection::systemBus().connect( cUPowerService, cUPowerPath, cUPowerInterface, "Changed", this, SLOT(onUPowerPropertyChanged()) );
 
     QDBusMessage call = QDBusMessage::createMethodCall( cUPowerService, cUPowerPath, cUPowerInterface, "EnumerateDevices" );
@@ -54,6 +56,8 @@ void UPowerBackend::onEnumerateDevicesFinished(QDBusPendingCallWatcher *watcher)
 
                 m_battDevIFace = new QDBusInterface( cUPowerService, m_battPath, cDeviceInterface, sysBus, this );
                 m_percentage = m_battDevIFace->property( cPercentageProp ).toDouble();
+
+                emit batteryValueChanged(m_percentage);
 
                 break;
             }
