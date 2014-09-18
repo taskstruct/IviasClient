@@ -55,7 +55,7 @@ private:
     QUrl m_currentAdUrl;
     uint m_timestamps[ cTotalNumberOfAds ];
 
-    Package *m_pkg;
+    Package *m_pkg = nullptr;
     int m_timerId;
 };
 

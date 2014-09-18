@@ -65,7 +65,7 @@ void Updater::packageUnpacked(bool ok)
     qDebug() << "Package unpacked " << ok;
 
     // disconnect package signal. It is not needed anymore
-    disconnect( m_pkg, SIGNAL(packageReady(bool)), this, SLOT(packageUnpacked(bool)) );
+    disconnect( m_pkg, &Package::packageReady, this, &Updater::packageUnpacked );
 
     if( false != ok )
     {
@@ -87,9 +87,20 @@ void Updater::requestFile()
     QNetworkRequest request( m_currentAdUrl );
     QNetworkReply *reply = gNetworkAccessManager->get( request );
 
-    connect( reply, &QNetworkReply::finished, this, &Updater::downloadFinished );
+    if( m_pkg->openTmpFile() )
+    {
+        connect( reply, &QIODevice::readyRead, m_pkg, &Package::newDataAvailable );
+        connect( reply, &QNetworkReply::finished, this, &Updater::downloadFinished );
 
-    m_state = Downloading;
+        m_state = Downloading;
+    }
+    else
+    {
+        delete m_pkg;
+        m_pkg = nullptr;
+
+        requestNext();
+    }
 }
 
 void Updater::downloadFinished()
@@ -104,39 +115,16 @@ void Updater::downloadFinished()
     {
         if( QNetworkReply::NoError == reply->error() )
         {
-            // save package to /tmp
-            QFile tmp( Helper::tempPackageName() );
+            connect( m_pkg, &Package::packageReady, this, &Updater::packageUnpacked );
 
-            if( tmp.open( QIODevice::WriteOnly ) )
-            {
-                quint64 rBufSize = reply->readBufferSize();
-                quint64 wBufSize = tmp.write( reply->readAll() );
-                tmp.close();
+            m_pkg->unpack();
 
-                if( rBufSize == wBufSize )
-                {
-                    m_pkg = new Package( m_currentAdIndex );
-                    m_pkg->setLastModified( reply->header( QNetworkRequest::LastModifiedHeader ).toDateTime() );
-
-                    connect( m_pkg, &Package::packageReady, this, &Updater::packageUnpacked );
-
-                    m_pkg->unpack();
-
-                    m_state = Unpacking;
-                }
-                else
-                {
-                    // file is broken. Go to next one
-                    requestNext();
-                }
-            }
-            else
-            {
-                Q_ASSERT( false );
-            }
+            m_state = Unpacking;
         }
         else
         {
+            delete m_pkg;
+            m_pkg = nullptr;
             // skip to next one
             qDebug() << "File downloaded with error " << reply->errorString();
             requestNext();
@@ -144,6 +132,8 @@ void Updater::downloadFinished()
     }
     else
     {
+        delete m_pkg;
+        m_pkg = nullptr;
         // this should not happened
         Q_ASSERT(false);
     }
@@ -191,6 +181,9 @@ void Updater::headersReceived()
             }
             else
             {
+                m_pkg = new Package( m_currentAdIndex );
+                m_pkg->setLastModified( lastModified );
+
                 requestFile();
             }
         }

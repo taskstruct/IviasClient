@@ -20,11 +20,6 @@ const QString Helper::getSystemSettingsPath()
     return dataDir() + QLatin1Literal("systemSettings.ini");
 }
 
-const QString Helper::tempPackageName()
-{
-    return QDir::tempPath() + QChar('/') + cAppName + QLatin1Literal(".tmp");
-}
-
 const QString Helper::timestampsPath()
 {
     return dataDir() + QLatin1Literal("timestamps.ini");

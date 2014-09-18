@@ -77,24 +77,6 @@ void onAuthenticationRequired(QNetworkReply *reply, QAuthenticator * authenticat
     }
 }
 
-void onNetworkAccessibleChanged ( QNetworkAccessManager::NetworkAccessibility accessible )
-{
-    if( QNetworkAccessManager::Accessible == accessible )
-    {
-        QSqlDatabase db = QSqlDatabase::database( IviasClientDBConnection );
-
-        Q_ASSERT( !db.isValid() );
-
-        if( !db.isOpen() ) {
-            if(db.open()) {
-                QMLSettingsSingleton::instance()->refetchData();
-            }
-        }
-
-        //TODO: Something with Updater???
-    }
-}
-
 int main(int argc, char *argv[])
 {
     QGuiApplication app(argc, argv);
@@ -161,17 +143,35 @@ int main(int argc, char *argv[])
     Updater updater( &app );
     QMetaObject::invokeMethod( &updater, "update", Qt::QueuedConnection );
 
+    auto onNetworkAccessibleChanged = [&updater]( QNetworkAccessManager::NetworkAccessibility accessible )
+    {
+        if( QNetworkAccessManager::Accessible == accessible )
+        {
+            QSqlDatabase db = QSqlDatabase::database( IviasClientDBConnection );
+
+            Q_ASSERT( !db.isValid() );
+
+            if( !db.isOpen() ) {
+                if(db.open()) {
+                    QMLSettingsSingleton::instance()->refetchData();
+                }
+            }
+
+            updater.update();
+        }
+    };
+
     // Now we can start listen for events from network manager
     QObject::connect( gNetworkAccessManager, &QNetworkAccessManager::authenticationRequired, &onAuthenticationRequired );
-    QObject::connect( gNetworkAccessManager, &QNetworkAccessManager::networkAccessibleChanged, &onNetworkAccessibleChanged );
+    QObject::connect( gNetworkAccessManager, &QNetworkAccessManager::networkAccessibleChanged, onNetworkAccessibleChanged );
 
     QObject::connect( gPowerManager, &PowerManager::powerSupplyPlugedIn, &updater, &Updater::update );
 
 
     // create window to display start up
     QQmlApplicationEngine engine(&app);
-    engine.setNetworkAccessManagerFactory( new IviasQmlNetworkAccessManagerFactory() );
-    engine.load(QUrl(QStringLiteral("qml/IviasClient/main.qml")));
+//    engine.setNetworkAccessManagerFactory( new IviasQmlNetworkAccessManagerFactory() );
+    engine.load(QUrl(QStringLiteral("/home/nikolay/IviasClient/qml/IviasClient/main.qml")));
 
     QObject *topLevel = engine.rootObjects().value(0);
 
@@ -183,7 +183,7 @@ int main(int argc, char *argv[])
     }
 
     window->show();
-    window->showFullScreen();
+//    window->showFullScreen();
     window->installEventFilter( new InputActivityFilter(window) );
 
     return app.exec();

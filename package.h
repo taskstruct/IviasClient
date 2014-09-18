@@ -6,6 +6,8 @@
 #include <QtCore/QDateTime>
 #include <QtCore/QString>
 
+class QTemporaryFile;
+
 class Package : public QObject
 {
     Q_OBJECT
@@ -46,10 +48,13 @@ public:
 
     bool isValid() { return m_isValid; }
 
+    bool openTmpFile();
+
 signals:
     void packageReady(bool);
 
 public slots:
+    void newDataAvailable();
     void unpackFinished(int);
 
 private:
@@ -58,11 +63,11 @@ private:
 
     void recursiveRemove( const QString & dirName );
 
-    State m_state;
+    State m_state = Init;
 
     int m_adIndex;
     int m_uid;
-    QDateTime m_lastModified;
+    QDateTime m_lastModified = QDateTime();
 
     QString m_title;
     /// @brief relative path in package for thumbnail picture
@@ -70,7 +75,10 @@ private:
     /// @brief absolute path to package e.g /home/user/.IviasClient/Ad1
     QString m_packagePath;
     QString m_tmpPackagePath;
-    bool m_isValid;
+
+    QTemporaryFile* m_tmpFile = nullptr;
+
+    bool m_isValid = false;
 };
 
 #endif // PACKAGE_H

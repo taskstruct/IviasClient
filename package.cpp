@@ -5,6 +5,9 @@
 #include <QtCore/QFileInfoList>
 #include <QtCore/QProcess>
 #include <QtCore/QSettings>
+#include <QtCore/QTemporaryFile>
+
+#include <QtNetwork/QNetworkReply>
 
 #include <QtCore/QDebug>
 
@@ -17,10 +20,7 @@ const QString Package::UIDKey = QLatin1Literal("uid");
 
 Package::Package( const int adIndex, QObject *parent) :
     QObject(parent),
-    m_state( Init ),
-    m_adIndex(adIndex),
-    m_lastModified( QDateTime() ),
-    m_isValid(false)
+    m_adIndex(adIndex)
 {
     m_packagePath = Helper::dataDir() + QString(QLatin1Literal("Ad%1/")).arg(m_adIndex);
 
@@ -30,6 +30,10 @@ Package::Package( const int adIndex, QObject *parent) :
 Package::~Package()
 {
     //TODO: Remove everyting that might be working
+
+    if( m_tmpFile ) {
+        delete m_tmpFile;
+    }
 }
 
 const QString Package::title() const
@@ -70,7 +74,7 @@ void Package::unpack()
 
     QStringList args;
 
-    args << "x" << Helper::tempPackageName() << "-o" + Helper::dataDir() + "tmpdir";
+    args << "x" << QFileInfo(*m_tmpFile).absoluteFilePath() << "-o" + Helper::dataDir() + "tmpdir";
 
     qDebug() << "7z args: " << args;
 
@@ -79,14 +83,28 @@ void Package::unpack()
     m_state = Unpacking;
 
     connect( sevenZip, SIGNAL(finished(int)), this, SLOT(unpackFinished(int)) );
+}
 
-//    sevenZip->deleteLater();
+void Package::newDataAvailable()
+{
+    QNetworkReply * reply = qobject_cast<QNetworkReply *>( sender() );
+
+    Q_ASSERT( 0 == reply );
+
+    m_tmpFile->write( reply->readAll() );
 }
 
 void Package::unpackFinished( int exitCode )
 {
+    QObject *sevenZipProc = sender();
+
+    if(sevenZipProc) {
+        sevenZipProc->deleteLater();
+    }
+
     //clean up tmp file
-    QFile::remove( Helper::tempPackageName() );
+    delete m_tmpFile;
+    m_tmpFile = nullptr;
 
     if ( exitCode != 0 )
     {
@@ -241,4 +259,27 @@ void Package::load()
     m_isValid = true;
 
 //    qDebug() << "Loading package[" << m_adIndex << "] with timestamp = " << m_lastModified;
+}
+
+bool Package::openTmpFile()
+{
+    QString templateName = QDir::tempPath();
+
+    if( !templateName.endsWith( '/' ) )
+    {
+        templateName += '/';
+    }
+
+    templateName += QLatin1String("ivias_tmp_XXXXXX");
+
+    m_tmpFile = new QTemporaryFile( templateName );
+
+    if( m_tmpFile->open() )
+    {
+        return true;
+    }
+    else
+    {
+        delete m_tmpFile;
+    }
 }
