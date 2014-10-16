@@ -18,7 +18,7 @@ Item {
         property variant source: ShaderEffectSource {
             id: effectSource
             smooth: true
-            sourceRect: Qt.rect( 0, sourceItem.height- mirrorEffect.height, mirrorEffect.width, mirrorEffect.height )
+            sourceRect: Qt.rect( 0, Math.abs( mirrorEffect.height - sourceItem.height ) , mirrorEffect.width, mirrorEffect.height )
             wrapMode: ShaderEffectSource.ClampToEdge
         }
 
@@ -30,14 +30,14 @@ Item {
             uniform highp float height;
 
             void main() {
-                mat4 scale = mat4(
+                mat4 transMat = mat4(
                         vec4(    1.0,  0.0, 0.0, 0.0),
                         vec4(    0.0, -1.0, 0.0, 0.0),
                         vec4(    0.0,  0.0, 1.0, 0.0),
                         vec4(    0.0,  0.0, 0.0, 1.0)
                     );
 
-                vec4 pos = scale * qt_Vertex;
+                vec4 pos = transMat * qt_Vertex;
 
                 pos.y += height;
 
@@ -66,9 +66,11 @@ Item {
 //                sum += texture2D(source, vec2(qt_TexCoord0.x + 3.0 * xStep, qt_TexCoord0.y)) * 0.09;
 //                sum += texture2D(source, vec2(qt_TexCoord0.x + 4.0 * xStep, qt_TexCoord0.y)) * 0.05;
 
-                sum += texture2D(source, vec2(qt_TexCoord0.x - xStep,       qt_TexCoord0.y)) * 0.25;
-                sum += texture2D(source, vec2(qt_TexCoord0.x,               qt_TexCoord0.y)) * 0.5;
-                sum += texture2D(source, vec2(qt_TexCoord0.x + xStep,       qt_TexCoord0.y)) * 0.25;
+                sum += texture2D(source, vec2(qt_TexCoord0.x - 2.0 * xStep, qt_TexCoord0.y)) * 0.11;
+                sum += texture2D(source, vec2(qt_TexCoord0.x - xStep,       qt_TexCoord0.y)) * 0.23;
+                sum += texture2D(source, vec2(qt_TexCoord0.x,               qt_TexCoord0.y)) * 0.29;
+                sum += texture2D(source, vec2(qt_TexCoord0.x + xStep,       qt_TexCoord0.y)) * 0.23;
+                sum += texture2D(source, vec2(qt_TexCoord0.x + 2.0 * xStep, qt_TexCoord0.y)) * 0.11;
 
                 gl_FragColor = sum;
             }"
@@ -102,7 +104,7 @@ Item {
             {
                 highp vec4 pos = qt_Vertex;
 
-                highp float d = -0.01 * qt_MultiTexCoord0.y; // how wide to be
+                highp float d = -0.1 * qt_MultiTexCoord0.y; // how wide to be
 
                 pos.x = width * mix(d, 1.0 - d, qt_MultiTexCoord0.x);
 
@@ -132,11 +134,13 @@ Item {
 //                sum += texture2D(source, vec2(qt_TexCoord0.x, qt_TexCoord0.y + 3.0 * yStep)) * 0.09;
 //                sum += texture2D(source, vec2(qt_TexCoord0.x, qt_TexCoord0.y + 4.0 * yStep)) * 0.05;
 
-                sum += texture2D(source, vec2(qt_TexCoord0.x, qt_TexCoord0.y - yStep      )) * 0.25;
-                sum += texture2D(source, vec2(qt_TexCoord0.x, qt_TexCoord0.y              )) * 0.5;
-                sum += texture2D(source, vec2(qt_TexCoord0.x, qt_TexCoord0.y + yStep      )) * 0.25;
+                sum += texture2D(source, vec2(qt_TexCoord0.x, qt_TexCoord0.y - 2.0 * yStep)) * 0.11;
+                sum += texture2D(source, vec2(qt_TexCoord0.x, qt_TexCoord0.y - yStep      )) * 0.23;
+                sum += texture2D(source, vec2(qt_TexCoord0.x, qt_TexCoord0.y              )) * 0.29;
+                sum += texture2D(source, vec2(qt_TexCoord0.x, qt_TexCoord0.y + yStep      )) * 0.23;
+                sum += texture2D(source, vec2(qt_TexCoord0.x, qt_TexCoord0.y + 2.0 * yStep)) * 0.11;
 
-                gl_FragColor = sum * (1.0 - qt_TexCoord0.y);
+                gl_FragColor = sum * (1.0 - qt_TexCoord0.y) * vec4( 0.18, 0.43, 0.49, 1.0 );
             }
         "
 

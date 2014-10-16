@@ -1,7 +1,8 @@
-import QtQuick 2.1
+import QtQuick 2.2
+import QtQuick.Layouts 1.1
 import IviasClient 1.0
 
-Grid {
+GridLayout {
     id: mainLayout
 
     property alias page: adsModel.page
@@ -10,7 +11,8 @@ Grid {
 
     columns: 3
     rows: 2
-    spacing: 15
+    columnSpacing: 15
+    rowSpacing: 15
 
     Repeater {
 
@@ -21,8 +23,9 @@ Grid {
 
         delegate: Tile {
             id: modelDelegate
-            width: mainLayout.width / 3
-            height: 200
+
+            Layout.fillWidth: true
+            Layout.fillHeight: true
 
             page: adsModel.page
 

@@ -101,7 +101,7 @@ Item {
                 anchors.top: parent.top
 
                 Rectangle {
-                    color: "#dbe3e2"
+                    color: "#3c7977"
                     anchors.fill: parent
                 }
 

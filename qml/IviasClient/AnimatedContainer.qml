@@ -3,8 +3,8 @@ import QtQuick 2.1
 Item {
     id: animContainer
 
-    width: mainView.width - 300
-    height: viewsContainer.height - 50
+    width: parent.width * 0.8
+    height: parent.height - anchors.topMargin
 
     anchors.horizontalCenter: parent.horizontalCenter
     anchors.top: parent.top

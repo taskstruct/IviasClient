@@ -1,21 +1,37 @@
 import QtQuick 2.1
+import QtQuick.Layouts 1.1
 
 Item {
     id: viewTitle
-    width: 240
-    height: 60
 
     property alias text: title.text
     property bool selected: false
 
+    property int indicatorDirection: 0
+
     signal clicked
+
+    Layout.fillWidth: true
+    Layout.fillHeight: true
+
+    onIndicatorDirectionChanged: {
+        if( indicatorDirection == 0 ) {
+            selectIndicator.anchors.top = viewTitle.top
+            selectIndicator.anchors.bottom = undefined
+        }
+        else {
+            selectIndicator.anchors.top = undefined
+            selectIndicator.anchors.bottom = viewTitle.bottom
+        }
+    }
 
     Text {
         id: title
         text: ""
         font.family: "Ubuntu"
-        font.pointSize: 40
-        color: "#dbe3e2"
+        font.pixelSize: viewTitle.height * 0.5
+        color: viewTitle.selected ? "#2f6e7d" : "#dbe3e2"
+        style: viewTitle.selected ? Text.Sunken : Text.Normal
 
         anchors.centerIn: parent
     }
@@ -24,7 +40,23 @@ Item {
         id: effectBuffer
         anchors.fill: parent
         sourceItem: title
+        live: false
         visible: false
+    }
+
+    Rectangle {
+        anchors.fill: parent
+        color: "#3c7977"
+        opacity: 0.5
+    }
+
+    Rectangle {
+        id: selectIndicator
+        width: parent.width
+        height: 5
+        color: "#85a894"
+//        opacity: 0.5
+        visible: viewTitle.selected
     }
 
     MouseArea {
@@ -61,15 +93,15 @@ Item {
                         target: effectBuffer
                         property: "scale"
                         from: 1.0
-                        to: 1.5
-                        duration: 200
+                        to: 1.20
+                        duration: 150
                     }
                     PropertyAnimation {
                         target: effectBuffer
                         property: "opacity"
                         from: 1.0
                         to: 0.0
-                        duration: 200
+                        duration: 150
                     }
                     ScriptAction { script: title.font.bold = true }
                 }
