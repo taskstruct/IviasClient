@@ -261,4 +261,14 @@ Window {
         shortcut: "Ctrl+W"
         onTriggered: seatbeltWarning.active = !seatbeltWarning.active
     }
+
+    Action {
+        shortcut: "Ctrl+F"
+        onTriggered: if( window.visibility != Window.FullScreen ) {
+                         window.visibility = Window.FullScreen
+                     }
+                     else {
+                         window.visibility = Window.AutomaticVisibility
+                     }
+    }
 }
