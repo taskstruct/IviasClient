@@ -18,7 +18,7 @@ public:
     void init();
 
     qreal getBattery() const { return m_batteryValue; }
-    bool isOnBattery() const { return qobject_cast<PowerBackendIface*>( m_backend )->isOnBattery(); }
+    Q_INVOKABLE bool isOnBattery() const { return qobject_cast<PowerBackendIface*>( m_backend )->isOnBattery(); }
 
 signals:
     // used in QML
